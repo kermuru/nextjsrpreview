@@ -133,23 +133,3 @@ export interface SupplierItemIOResponse {
   item: SupplierItemIO;
   message: string;
 }
-
-export interface BparDropdownRecord {
-  bpar_i_person_id: number;
-  s_bpartner_id?: number | null;
-  name1?: string | null;
-}
-
-export interface BparDiscordUserIO {
-  id: number;
-  bpar_i_person_id: number;
-  s_bpartner_id?: number | null;
-  discord_user_id: string;
-  created_at?: string;
-  updated_at?: string;
-}
-
-export interface BparDiscordUserIOResponse {
-  record: BparDiscordUserIO;
-  message: string;
-}
