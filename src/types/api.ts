@@ -31,6 +31,7 @@ export interface UploadInterredPhotoContext {
   uploader_name?: string;
   photo?: string;
   is_valid?: number;
+  allow_facebook_post?: boolean;
   created_at?: string;
   updated_at?: string;
 }

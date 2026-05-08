@@ -116,9 +116,28 @@ export default function SlideshowPage({ documentNo }: { documentNo: string }) {
         const response = await checkSlideshowOrientation(formData);
         const raw = Array.isArray(response) ? response[0] : response;
         const result = raw && typeof raw === 'object' && 'body' in (raw as Record<string, unknown>) ? (raw as Record<string, unknown>).body : raw;
-        const output = result && typeof result === 'object' ? (result as Record<string, unknown>) : {};
+       
+        // const output = result && typeof result === 'object' ? (result as Record<string, unknown>) : {};
+        
+        // if (Number(output.autodelete) === 1) {
+        //   setProcessingProgress(Math.round(((index + 1) / filesToProcess.length) * 100));
+        //   continue;
+        // }
 
-        if (Number(output.autodelete) === 1) {
+        const payload = result && typeof result === 'object'
+          ? (result as Record<string, unknown>)
+          : {};
+
+        // 👇 extract actual data[0]
+        const output = Array.isArray(payload.data) && payload.data.length > 0
+          ? (payload.data[0] as Record<string, unknown>)
+          : payload;
+
+        const autoDelete = Number(output.autodelete) === 1;
+        const isUpright = Number(output.upright) === 1;
+
+        // ✅ skip if autodelete = 1
+        if (autoDelete) {
           setProcessingProgress(Math.round(((index + 1) / filesToProcess.length) * 100));
           continue;
         }
@@ -130,14 +149,31 @@ export default function SlideshowPage({ documentNo }: { documentNo: string }) {
           image.onload = () => resolve({ width: image.naturalWidth, height: image.naturalHeight });
           image.onerror = () => reject(new Error('Unable to inspect image.'));
           image.src = imageUrl;
+
+      
+
         });
 
+        // nextImages.push({
+        //   file: resizedForPreview,
+        //   preview,
+        //   needsCrop: needsCrop(size.width, size.height),
+        //   needsRotation: Number(output.upright) === 0
+        // });
+
+        console.log('API output:', output);
+        console.log('autodelete:', Number(output.autodelete));
+        console.log('upright:', Number(output.upright));
+        console.log('size:', size.width, size.height);
+        console.log('needsCrop result:', needsCrop(size.width, size.height));
+
         nextImages.push({
-          file: resizedForPreview,
-          preview,
-          needsCrop: needsCrop(size.width, size.height),
-          needsRotation: Number(output.upright) === 0
-        });
+        file: resizedForPreview,
+        preview,
+        needsCrop: needsCrop(size.width, size.height), // keep your existing logic
+        needsRotation: !isUpright // 👈 FIXED (upright = 1 → no rotation)
+      });
+
       } catch {
         // Ignore single-file failures to match the Angular behavior.
       } finally {
@@ -148,6 +184,8 @@ export default function SlideshowPage({ documentNo }: { documentNo: string }) {
     setImages((current) => [...current, ...nextImages]);
     setProcessing(false);
     event.target.value = '';
+
+    
   }
 
   async function openCrop(index: number) {
@@ -279,54 +317,54 @@ export default function SlideshowPage({ documentNo }: { documentNo: string }) {
               </div>
             </div>
 
-            <label className="upload-dropzone">
-              <strong>Select Photos</strong>
-              <div className="helper">Max {MAX_PHOTOS} images. {availableSlots} slot(s) remaining.</div>
-              <input type="file" accept=".jpg,.jpeg,.png" multiple onChange={(event) => void processFiles(event)} style={{ display: 'block', marginTop: 12 }} />
-            </label>
+              <label className="upload-dropzone">
+                <strong>Select Photos</strong>
+                <div className="helper">Max {MAX_PHOTOS} images. {availableSlots} slot(s) remaining.</div>
+                <input type="file" accept=".jpg,.jpeg,.png" multiple onChange={(event) => void processFiles(event)} style={{ display: 'block', marginTop: 12 }} />
+              </label>
 
-            {images.length ? (
-              <div className="gallery">
-                {images.map((image, index) => (
-                  <div key={`${image.file.name}-${index}`} className="gallery-item">
-                    <img src={image.preview} alt={image.file.name} />
-                    <div className="overlay-actions">
-                      {(image.needsCrop || image.needsRotation) ? (
-                        <button className="button secondary small" type="button" onClick={() => void openCrop(index)}>
-                          Fix
-                        </button>
-                      ) : null}
-                      <button className="button danger small" type="button" onClick={() => setImages((current) => current.filter((_, itemIndex) => itemIndex !== index))}>
-                        Remove
-                      </button>
-                    </div>
-                    <div className="stack" style={{ marginTop: 10 }}>
-                      {image.needsCrop ? <span className="pill warning">Needs crop</span> : null}
-                      {image.needsRotation ? <span className="pill warning">Needs rotation</span> : null}
-                      {!image.needsCrop && !image.needsRotation ? <span className="pill success">Ready</span> : null}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : null}
-
-            {existingPhotos.length ? (
-              <div className="stack">
-                <h2 style={{ marginBottom: 0 }}>Existing Slideshow Photos</h2>
+              {images.length ? (
                 <div className="gallery">
-                  {existingPhotos.map((photo) => (
-                    <div key={photo} className="gallery-item">
-                      <img src={photo} alt="Existing slideshow" />
+                  {images.map((image, index) => (
+                    <div key={`${image.file.name}-${index}`} className="gallery-item">
+                      <img src={image.preview} alt={image.file.name} />
                       <div className="overlay-actions">
-                        <button className="button danger small" type="button" onClick={() => void removeExisting(photo)}>
-                          Delete
+                        {(image.needsCrop || image.needsRotation) ? (
+                          <button className="button secondary small" type="button" onClick={() => void openCrop(index)}>
+                            Fix
+                          </button>
+                        ) : null}
+                        <button className="button danger small" type="button" onClick={() => setImages((current) => current.filter((_, itemIndex) => itemIndex !== index))}>
+                          Remove
                         </button>
+                      </div>
+                      <div className="stack" style={{ marginTop: 10 }}>
+                        {image.needsCrop ? <span className="pill warning">Needs crop</span> : null}
+                        {image.needsRotation ? <span className="pill warning">Needs rotation</span> : null}
+                        {!image.needsCrop && !image.needsRotation ? <span className="pill success">Ready</span> : null}
                       </div>
                     </div>
                   ))}
                 </div>
-              </div>
-            ) : null}
+              ) : null}
+
+              {existingPhotos.length ? (
+                <div className="stack">
+                  <h2 style={{ marginBottom: 0 }}>Existing Slideshow Photos</h2>
+                  <div className="gallery">
+                    {existingPhotos.map((photo) => (
+                      <div key={photo} className="gallery-item">
+                        <img src={photo} alt="Existing slideshow" />
+                        <div className="overlay-actions">
+                          <button className="button danger small" type="button" onClick={() => void removeExisting(photo)}>
+                            Delete
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
 
             {message ? <div className="status-card success">{message}</div> : null}
             {error ? <div className="status-card error">{error}</div> : null}

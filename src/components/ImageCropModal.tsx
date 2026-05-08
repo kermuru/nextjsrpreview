@@ -1,8 +1,8 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useRef, useMemo, useState } from 'react';
 import ReactCrop, { type Crop, type PixelCrop } from 'react-image-crop';
-import { cropDataUrl, rotateDataUrl } from '@/lib/images';
+import { rotateDataUrl } from '@/lib/images';
 import Modal from './Modal';
 
 type Props = {
@@ -22,17 +22,16 @@ export default function ImageCropModal({
   onCancel,
   onConfirm
 }: Props) {
+  const imgRef = useRef<HTMLImageElement>(null);
   const [workingSource, setWorkingSource] = useState(sourceUrl);
   const [crop, setCrop] = useState<Crop>();
   const [completedCrop, setCompletedCrop] = useState<PixelCrop>();
   const [saving, setSaving] = useState(false);
-  const [metrics, setMetrics] = useState<{ naturalWidth: number; naturalHeight: number; width: number; height: number } | null>(null);
 
   useEffect(() => {
     setWorkingSource(sourceUrl);
     setCrop(undefined);
     setCompletedCrop(undefined);
-    setMetrics(null);
   }, [sourceUrl]);
 
   const imageStyle = useMemo(() => ({ maxWidth: '100%', maxHeight: '65vh' }), []);
@@ -42,14 +41,38 @@ export default function ImageCropModal({
     setWorkingSource(next);
     setCrop(undefined);
     setCompletedCrop(undefined);
-    setMetrics(null);
   }
 
   async function confirm() {
-    if (!completedCrop) return;
+    if (!completedCrop || !imgRef.current) return;
+
+    const image = imgRef.current;
+    const scaleX = image.naturalWidth / image.width;
+    const scaleY = image.naturalHeight / image.height;
+
+    const cropX = completedCrop.x * scaleX;
+    const cropY = completedCrop.y * scaleY;
+    const cropW = completedCrop.width * scaleX;
+    const cropH = completedCrop.height * scaleY;
+
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.max(1, Math.round(cropW));
+    canvas.height = Math.max(1, Math.round(cropH));
+
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    ctx.drawImage(image, cropX, cropY, cropW, cropH, 0, 0, canvas.width, canvas.height);
+
     setSaving(true);
     try {
-      const blob = await cropDataUrl(workingSource, completedCrop, metrics || undefined);
+      const blob = await new Promise<Blob>((resolve, reject) => {
+        canvas.toBlob(
+          (b) => (b ? resolve(b) : reject(new Error('Crop failed.'))),
+          'image/jpeg',
+          0.92
+        );
+      });
       await onConfirm(blob);
     } finally {
       setSaving(false);
@@ -74,30 +97,26 @@ export default function ImageCropModal({
               keepSelection
             >
               <img
+                ref={imgRef}
                 src={workingSource}
                 alt="Crop preview"
                 style={imageStyle}
                 onLoad={(event) => {
-                  const element = event.currentTarget;
-                  const width = element.width;
-                  const height = element.height;
-                  setMetrics({
-                    naturalWidth: element.naturalWidth,
-                    naturalHeight: element.naturalHeight,
-                    width,
-                    height
-                  });
-                  const targetWidth = width * 0.8;
-                  const targetHeight = aspect ? targetWidth / aspect : height * 0.8;
-                  const safeHeight = Math.min(targetHeight, height * 0.8);
-                  const safeWidth = Math.min(targetWidth, width * 0.8);
-                  setCrop({
+                  const el = event.currentTarget;
+                  const w = el.width;
+                  const h = el.height;
+                  const side = Math.min(w, h) * 0.8;
+                  const targetW = aspect ? side : w * 0.8;
+                  const targetH = aspect ? side / aspect : h * 0.8;
+                  const initialCrop: PixelCrop = {
                     unit: 'px',
-                    x: (width - safeWidth) / 2,
-                    y: (height - safeHeight) / 2,
-                    width: safeWidth,
-                    height: safeHeight
-                  });
+                    x: (w - targetW) / 2,
+                    y: (h - targetH) / 2,
+                    width: targetW,
+                    height: targetH
+                  };
+                  setCrop(initialCrop);
+                  setCompletedCrop(initialCrop);
                 }}
               />
             </ReactCrop>
@@ -112,7 +131,12 @@ export default function ImageCropModal({
           <button type="button" className="button ghost" onClick={onCancel} disabled={saving}>
             Cancel
           </button>
-          <button type="button" className="button secondary" onClick={confirm} disabled={!completedCrop || saving}>
+          <button
+            type="button"
+            className="button secondary"
+            onClick={confirm}
+            disabled={!completedCrop || saving}
+          >
             {saving ? 'Saving...' : 'Confirm Crop'}
           </button>
         </div>

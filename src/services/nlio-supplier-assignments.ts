@@ -35,3 +35,13 @@ export function deleteNlioAssignment(id: number) {
     method: 'DELETE',
   });
 }
+
+export function notifyMarshalsByDocument(documentNo: string) {
+  return apiRequest<{ success: boolean; documentno: string; message: string }>(
+    '/interment/notify-marshal-document',
+    {
+      method: 'POST',
+      body: JSON.stringify({ documentno: documentNo }),
+    },
+  );
+}
