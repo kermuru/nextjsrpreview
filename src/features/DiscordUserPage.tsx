@@ -11,12 +11,44 @@ import {
 } from '@/services/discord-usersio';
 import type { BparDiscordUserIO, BparDropdownRecord } from '@/types/api';
 
+function Spinner({ size = 14 }: { size?: number }) {
+  return (
+    <span
+      style={{
+        display: 'inline-block',
+        width: size,
+        height: size,
+        border: '2px solid var(--color-border-secondary)',
+        borderTopColor: 'var(--color-text-secondary)',
+        borderRadius: '50%',
+        animation: 'spin 0.7s linear infinite',
+        verticalAlign: 'middle',
+        flexShrink: 0,
+      }}
+    />
+  );
+}
+
+function SkeletonField() {
+  return (
+    <div
+      style={{
+        height: 36,
+        borderRadius: 8,
+        background: 'var(--color-background-secondary)',
+        animation: 'pulse 1.4s ease-in-out infinite',
+      }}
+    />
+  );
+}
+
 export default function DiscordUserPage() {
   const [bparOptions, setBparOptions] = useState<BparDropdownRecord[]>([]);
   const [selectedBparId, setSelectedBparId] = useState('');
   const [sBpartnerId, setSBpartnerId] = useState('');
   const [discordUserId, setDiscordUserId] = useState('');
   const [record, setRecord] = useState<BparDiscordUserIO | null>(null);
+  const [loadingBpar, setLoadingBpar] = useState(false);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -24,11 +56,14 @@ export default function DiscordUserPage() {
 
   useEffect(() => {
     async function loadBparList() {
+      setLoadingBpar(true);
       try {
         const data = await getBparDropdownList();
         setBparOptions(data);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load BPAR list.');
+      } finally {
+        setLoadingBpar(false);
       }
     }
 
@@ -37,7 +72,6 @@ export default function DiscordUserPage() {
 
   const selectedBpar = useMemo(() => {
     if (!selectedBparId) return null;
-
     return (
       bparOptions.find(
         (item) => String(item.bpar_i_person_id) === selectedBparId
@@ -156,97 +190,154 @@ export default function DiscordUserPage() {
   }
 
   return (
-    <div className="page-shell plain">
-      <div className="center-column">
-        <div className="page-card wide stack">
-          <div className="row between">
-            <h1 style={{ margin: 0 }}>Discord User Mapping</h1>
-          </div>
+    <>
+      {/* Keyframe animations injected once */}
+      <style>{`
+        @keyframes spin { to { transform: rotate(360deg); } }
+        @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+      `}</style>
 
-          {loading ? <div className="status-card">Loading...</div> : null}
-          {error ? <div className="status-card error">{error}</div> : null}
-          {message ? <div className="status-card success">{message}</div> : null}
+      <div className="page-shell plain">
+        <div className="center-column">
+          <div className="page-card wide stack">
+            <div className="row between">
+              <h1 style={{ margin: 0 }}>Discord User Mapping</h1>
+            </div>
 
-          <div className="page-card stack" style={{ padding: 18 }}>
-            <div>
-              <label className="helper">BPAR Name</label>
-              <select
-                className="select"
-                value={selectedBparId}
-                onChange={(e) => setSelectedBparId(e.target.value)}
-              >
-                <option value="">Select BPAR name</option>
-                {/* {bparOptions.map((item) => (
-                  <option key={item.bpar_i_person_id} value={item.bpar_i_person_id}>
-                    {item.name1 || `BPAR ${item.bpar_i_person_id}`}
-                  </option>
-                ))} */}
+            {error ? <div className="status-card error">{error}</div> : null}
+            {message ? <div className="status-card success">{message}</div> : null}
 
-                {bparOptions.map((item, index) => (
-                <option
-                    key={`${item.bpar_i_person_id}-${index}`}
-                    value={item.bpar_i_person_id}
+            <div className="page-card stack" style={{ padding: 18 }}>
+
+              {/* ── BPAR dropdown ── */}
+              <div>
+                <label className="helper">BPAR Name</label>
+                <div style={{ position: 'relative' }}>
+                  <select
+                    className="select"
+                    value={selectedBparId}
+                    onChange={(e) => setSelectedBparId(e.target.value)}
+                    disabled={loadingBpar}
+                    style={{ opacity: loadingBpar ? 0.6 : 1 }}
+                  >
+                    <option value="">
+                      {loadingBpar ? 'Loading BPAR list...' : 'Select BPAR name'}
+                    </option>
+                    {bparOptions.map((item, index) => (
+                      <option
+                        key={`${item.bpar_i_person_id}-${index}`}
+                        value={item.bpar_i_person_id}
+                      >
+                        {item.name1 || `BPAR ${item.bpar_i_person_id}`}
+                      </option>
+                    ))}
+                  </select>
+                  {loadingBpar && (
+                    <span style={{ position: 'absolute', right: 32, top: '50%', transform: 'translateY(-50%)' }}>
+                      <Spinner />
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {/* ── Inline "fetching record" banner ── */}
+              {loading && (
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 8,
+                    padding: '8px 12px',
+                    borderRadius: 8,
+                    background: 'var(--color-background-info)',
+                    color: 'var(--color-text-info)',
+                    border: '0.5px solid var(--color-border-info)',
+                    fontSize: 13,
+                  }}
                 >
-                    {item.name1 || `BPAR ${item.bpar_i_person_id}`}
-                </option>
-                ))}
-              </select>
-            </div>
+                  <Spinner size={13} />
+                  Fetching Discord record for this user...
+                </div>
+              )}
 
-            <div>
-              <label className="helper">bpar_i_person_id</label>
-              <input
-                className="input"
-                value={selectedBparId}
-                readOnly
-                placeholder="Auto-filled"
-              />
-            </div>
+              {/* ── bpar_i_person_id ── */}
+              <div>
+                <label className="helper">bpar_i_person_id</label>
+                {loadingBpar
+                  ? <SkeletonField />
+                  : <input className="input" value={selectedBparId} readOnly placeholder="Auto-filled" />
+                }
+              </div>
 
-            <div>
-              <label className="helper">s_bpartner_id</label>
-              <input
-                className="input"
-                value={sBpartnerId}
-                readOnly
-                placeholder="Auto-filled"
-              />
-            </div>
+              {/* ── s_bpartner_id ── */}
+              <div>
+                <label className="helper">s_bpartner_id</label>
+                {loadingBpar
+                  ? <SkeletonField />
+                  : <input className="input" value={sBpartnerId} readOnly placeholder="Auto-filled" />
+                }
+              </div>
 
-            <div>
-              <label className="helper">discord_user_id</label>
-              <input
-                className="input"
-                value={discordUserId}
-                onChange={(e) => setDiscordUserId(e.target.value)}
-                placeholder="Enter Discord User ID"
-              />
-            </div>
+              {/* ── discord_user_id ── */}
+              <div>
+                <label className="helper">discord_user_id</label>
+                {loadingBpar ? (
+                  <SkeletonField />
+                ) : (
+                  <div style={{ position: 'relative' }}>
+                    <input
+                      className="input"
+                      value={loading ? '' : discordUserId}
+                      onChange={(e) => setDiscordUserId(e.target.value)}
+                      placeholder={loading ? 'Fetching record...' : 'Enter Discord User ID'}
+                      disabled={loading}
+                      style={{ opacity: loading ? 0.6 : 1 }}
+                    />
+                    {loading && (
+                      <span style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)' }}>
+                        <Spinner />
+                      </span>
+                    )}
+                  </div>
+                )}
+              </div>
 
-            <div className="row">
-              <button
-                className="button"
-                type="button"
-                onClick={() => void handleSave()}
-                disabled={saving}
-              >
-                {saving ? 'Saving...' : record ? 'Update' : 'Save'}
-              </button>
+              {/* ── Actions ── */}
+              <div className="row">
+                {loadingBpar || loading ? (
+                  <button className="button" type="button" disabled style={{ opacity: 0.45 }}>
+                    {saving ? 'Saving...' : record ? 'Update' : 'Save'}
+                  </button>
+                ) : (
+                  <button
+                    className="button"
+                    type="button"
+                    onClick={() => void handleSave()}
+                    disabled={saving}
+                  >
+                    {saving
+                      ? <><Spinner size={13} /> &nbsp;Saving...</>
+                      : record ? 'Update' : 'Save'
+                    }
+                  </button>
+                )}
 
-              {record ? (
-                <button
-                  className="button danger"
-                  type="button"
-                  onClick={() => void handleDelete()}
-                  disabled={saving}
-                >
-                  Delete
-                </button>
-              ) : null}
+                {record && !loading ? (
+                  <button
+                    className="button danger"
+                    type="button"
+                    onClick={() => void handleDelete()}
+                    disabled={saving}
+                  >
+                    {saving ? <><Spinner size={13} /> &nbsp;Deleting...</> : 'Delete'}
+                  </button>
+                ) : null}
+              </div>
+
             </div>
           </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }

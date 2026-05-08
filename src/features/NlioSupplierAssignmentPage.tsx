@@ -10,6 +10,7 @@ import {
   getAssignmentsByDocumentNo,
   getNlioByDocumentNo,
   getSuppliersByItem,
+  notifyMarshalsByDocument,
 } from '@/services/nlio-supplier-assignments';
 import type {
   NlioAssignmentRecord,
@@ -29,6 +30,7 @@ export default function NlioSupplierAssignmentPage() {
   const [selectedSupplierKey, setSelectedSupplierKey] = useState('');
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [notifying, setNotifying] = useState(false);
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
 
@@ -146,6 +148,27 @@ export default function NlioSupplierAssignmentPage() {
     }
   }
 
+  async function handleNotify() {
+    if (!documentNo.trim()) return;
+    setNotifying(true);
+    setError('');
+    setMessage('');
+    try {
+      const res = await notifyMarshalsByDocument(documentNo.trim());
+      setMessage(res.message);
+    } catch (err) {
+      if (isApiError(err)) {
+        setError(err.message);
+      } else if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError('Failed to notify marshals.');
+      }
+    } finally {
+      setNotifying(false);
+    }
+  }
+
   async function handleDelete(id: number) {
     setError('');
     setMessage('');
@@ -233,6 +256,16 @@ export default function NlioSupplierAssignmentPage() {
                     </li>
                   ))}
                 </ul>
+              </div>
+              <div>
+                <button
+                  className="button"
+                  type="button"
+                  onClick={() => void handleNotify()}
+                  disabled={notifying}
+                >
+                  {notifying ? 'Notifying...' : '📣 Notify Marshals'}
+                </button>
               </div>
             </div>
           ) : null}

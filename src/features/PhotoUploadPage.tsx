@@ -24,6 +24,7 @@ interface UploadRecordState {
   preview: string;
   recordId: number | null;
   editing: boolean;
+  allow_facebook_post: boolean;
   status: RecordStatus;
   feedback: string;
 }
@@ -96,6 +97,7 @@ export default function PhotoUploadPage({ documentNo }: { documentNo: string }) 
             preview: '',
             recordId: null,
             editing: false,
+            allow_facebook_post: false,
             status: 'idle',
             feedback: ''
           }))
@@ -119,6 +121,7 @@ export default function PhotoUploadPage({ documentNo }: { documentNo: string }) 
                   preview: photo.photo || '',
                   recordId: photo.id ?? null,
                   editing: false,
+                  allow_facebook_post: photo.allow_facebook_post ?? false,
                   status: photo.photo ? 'uploaded' : 'idle',
                   feedback: photo.photo ? 'A photo has already been uploaded for this occupant.' : ''
                 };
@@ -312,6 +315,7 @@ export default function PhotoUploadPage({ documentNo }: { documentNo: string }) 
         formData.append('photo', record.photo);
         formData.append('uploader_name', record.uploader_name.trim());
         formData.append('gender', record.gender);
+        formData.append('allow_facebook_post', record.allow_facebook_post ? '1' : '0');
 
         updateRequests.push(updateLapidaPhoto(record.recordId, formData));
       } else if (!record.recordId && record.photo) {
@@ -319,6 +323,7 @@ export default function PhotoUploadPage({ documentNo }: { documentNo: string }) 
         createForm.append(`occupants[${createIndex}][gender]`, record.gender);
         createForm.append(`occupants[${createIndex}][uploader_name]`, record.uploader_name.trim());
         createForm.append(`occupants[${createIndex}][photo]`, record.photo);
+        createForm.append(`occupants[${createIndex}][allow_facebook_post]`, record.allow_facebook_post ? '1' : '0');
         createIndex += 1;
       }
     });
@@ -549,6 +554,41 @@ export default function PhotoUploadPage({ documentNo }: { documentNo: string }) 
                           ) : null}
                         </div>
                       )}
+
+                      <div
+                        style={{
+                          marginTop: 12,
+                          padding: '12px 16px',
+                          background: '#eff6ff',
+                          border: '1px solid #bfdbfe',
+                          borderRadius: 12
+                        }}
+                      >
+                        <label
+                          style={{
+                            display: 'flex',
+                            alignItems: 'flex-start',
+                            gap: 12,
+                            cursor: 'pointer'
+                          }}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={record.allow_facebook_post}
+                            onChange={(event) =>
+                              updateRecord(index, { allow_facebook_post: event.target.checked })
+                            }
+                            disabled={saving}
+                            style={{ marginTop: 2, flexShrink: 0 }}
+                          />
+                          <span style={{ fontSize: 14, lineHeight: 1.5, color: '#374151' }}>
+                            I allow Renaissance Park to post this photo of{' '}
+                            <strong>{record.occupant_name}</strong> on Facebook as part of the
+                            Online Interment Service announcement.{' '}
+                            <span style={{ color: '#6b7280' }}>(Optional)</span>
+                          </span>
+                        </label>
+                      </div>
                     </div>
                   </div>
                 );
