@@ -31,6 +31,8 @@ export default function NlioSupplierAssignmentPage() {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [notifying, setNotifying] = useState(false);
+  const [intermentTime, setIntermentTime] = useState('');
+  const [massTime, setMassTime] = useState('');
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
 
@@ -125,11 +127,13 @@ export default function NlioSupplierAssignmentPage() {
 
     try {
       const response = await createNlioAssignment({
-        document_no: documentNo.trim(),
+        document_no:      documentNo.trim(),
         bpar_i_person_id: Number(bparId),
-        s_bpartner_id: Number(partnerId),
+        s_bpartner_id:    Number(partnerId),
         supplier_item_id: Number(selectedItemId),
-        assigned_by: assignedBy.trim() || undefined,
+        assigned_by:      assignedBy.trim() || undefined,
+        interment_time:   intermentTime.trim() || undefined,
+        mass_time:        massTime.trim() || undefined,
       });
 
       setMessage(response.message);
@@ -154,7 +158,10 @@ export default function NlioSupplierAssignmentPage() {
     setError('');
     setMessage('');
     try {
-      const res = await notifyMarshalsByDocument(documentNo.trim());
+      const overrides: { interment_time?: string; mass_time?: string } = {};
+      if (intermentTime.trim()) overrides.interment_time = intermentTime.trim();
+      if (massTime.trim())      overrides.mass_time      = massTime.trim();
+      const res = await notifyMarshalsByDocument(documentNo.trim(), overrides);
       setMessage(res.message);
     } catch (err) {
       if (isApiError(err)) {
@@ -256,6 +263,29 @@ export default function NlioSupplierAssignmentPage() {
                     </li>
                   ))}
                 </ul>
+              </div>
+              <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+                <div style={{ flex: 1, minWidth: 180 }}>
+                  <label className="helper">Interment Time (override)</label>
+                  <input
+                    className="input"
+                    value={intermentTime}
+                    onChange={(e) => setIntermentTime(e.target.value)}
+                    placeholder="e.g. 2:00 PM"
+                  />
+                </div>
+                <div style={{ flex: 1, minWidth: 180 }}>
+                  <label className="helper">Mass Time (override)</label>
+                  <input
+                    className="input"
+                    value={massTime}
+                    onChange={(e) => setMassTime(e.target.value)}
+                    placeholder="e.g. 1:00 PM"
+                  />
+                </div>
+              </div>
+              <div style={{ fontSize: '0.75rem', color: '#888' }}>
+                Time overrides apply to both supplier assignments and marshal notifications — sent to Discord only, not saved to the database.
               </div>
               <div>
                 <button

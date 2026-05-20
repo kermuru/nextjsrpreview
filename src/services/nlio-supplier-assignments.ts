@@ -23,6 +23,8 @@ export function createNlioAssignment(payload: {
   s_bpartner_id: number;
   supplier_item_id: number;
   assigned_by?: string;
+  interment_time?: string;
+  mass_time?: string;
 }) {
   return apiRequest<{ message: string; assignment: NlioAssignmentRecord }>('/supplierio/nlio/assignments', {
     method: 'POST',
@@ -36,12 +38,15 @@ export function deleteNlioAssignment(id: number) {
   });
 }
 
-export function notifyMarshalsByDocument(documentNo: string) {
+export function notifyMarshalsByDocument(
+  documentNo: string,
+  overrides?: { interment_time?: string; mass_time?: string },
+) {
   return apiRequest<{ success: boolean; documentno: string; message: string }>(
     '/interment/notify-marshal-document',
     {
       method: 'POST',
-      body: JSON.stringify({ documentno: documentNo }),
+      body: JSON.stringify({ documentno: documentNo, ...overrides }),
     },
   );
 }
