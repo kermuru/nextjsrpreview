@@ -2,8 +2,13 @@ import { apiRequest } from '@/lib/api';
 import type {
   NlioAssignmentRecord,
   NlioRecord,
+  PendingNlioItem,
   SupplierByItemRecord,
 } from '@/types/api';
+
+export function getPendingNlios() {
+  return apiRequest<PendingNlioItem[]>('/supplierio/nlio/pending');
+}
 
 export function getNlioByDocumentNo(documentNo: string) {
   return apiRequest<NlioRecord[]>(`/supplierio/nlio/${encodeURIComponent(documentNo)}`);

@@ -9,17 +9,38 @@ import {
   deleteNlioAssignment,
   getAssignmentsByDocumentNo,
   getNlioByDocumentNo,
+  getPendingNlios,
   getSuppliersByItem,
   notifyMarshalsByDocument,
 } from '@/services/nlio-supplier-assignments';
 import type {
   NlioAssignmentRecord,
   NlioRecord,
+  PendingNlioItem,
   SupplierAssignableItem,
   SupplierByItemRecord,
 } from '@/types/api';
 
+function Spinner({ size = 14 }: { size?: number }) {
+  return (
+    <span
+      style={{
+        display: 'inline-block',
+        width: size,
+        height: size,
+        border: '2px solid var(--color-border-secondary)',
+        borderTopColor: 'var(--color-text-secondary)',
+        borderRadius: '50%',
+        animation: 'spin 0.7s linear infinite',
+        verticalAlign: 'middle',
+        flexShrink: 0,
+      }}
+    />
+  );
+}
+
 export default function NlioSupplierAssignmentPage() {
+  const [pendingNlios, setPendingNlios] = useState<PendingNlioItem[]>([]);
   const [documentNo, setDocumentNo] = useState('');
   const [assignedBy, setAssignedBy] = useState('');
   const [items, setItems] = useState<SupplierAssignableItem[]>([]);
@@ -37,39 +58,41 @@ export default function NlioSupplierAssignmentPage() {
   const [message, setMessage] = useState('');
 
   useEffect(() => {
-    async function loadItems() {
+    async function loadInitial() {
       try {
-        setItems(await getAssignableItems());
+        const [itemsData, pendingData] = await Promise.all([
+          getAssignableItems(),
+          getPendingNlios(),
+        ]);
+        setItems(itemsData);
+        setPendingNlios(pendingData);
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to load supplier items.');
+        setError(err instanceof Error ? err.message : 'Failed to load data.');
       }
     }
 
-    void loadItems();
+    void loadInitial();
   }, []);
 
-  async function handleSearch() {
-    if (!documentNo.trim()) {
-      setError('Please enter a document number.');
-      return;
-    }
-
-    setLoading(true);
+  async function handleSelectNlio(docNo: string) {
+    setDocumentNo(docNo);
+    setNlioRecords([]);
+    setAssignments([]);
+    setSelectedSupplierKey('');
     setError('');
     setMessage('');
-    setSelectedSupplierKey('');
 
+    if (!docNo) return;
+
+    setLoading(true);
     try {
       const [nlioData, assignmentData] = await Promise.all([
-        getNlioByDocumentNo(documentNo.trim()),
-        getAssignmentsByDocumentNo(documentNo.trim()),
+        getNlioByDocumentNo(docNo),
+        getAssignmentsByDocumentNo(docNo),
       ]);
-
       setNlioRecords(nlioData);
       setAssignments(assignmentData);
     } catch (err) {
-      setNlioRecords([]);
-      setAssignments([]);
       if (isApiError(err)) {
         setError(err.message);
       } else if (err instanceof Error) {
@@ -196,6 +219,8 @@ export default function NlioSupplierAssignmentPage() {
   }
 
   return (
+    <>
+    <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     <div className="page-shell plain">
       <div className="center-column">
         <div className="page-card wide stack">
@@ -209,24 +234,49 @@ export default function NlioSupplierAssignmentPage() {
             <h1 style={{ margin: 0 }}>NLIO Supplier Assignment</h1>
           </div>
 
-          <div className="row">
-            <div style={{ flex: 1, minWidth: 260 }}>
-              <label className="helper">Document No</label>
-              <input
-                className="input"
+          <div>
+            <label className="helper">Select Interment Order</label>
+            <div style={{ position: 'relative' }}>
+              <select
+                className="select"
                 value={documentNo}
-                onChange={(event) => setDocumentNo(event.target.value)}
-                placeholder="Enter NLIO document number"
-              />
-            </div>
-            <div style={{ display: 'flex', alignItems: 'end' }}>
-              <button className="button" type="button" onClick={() => void handleSearch()}>
-                Search NLIO
-              </button>
+                onChange={(event) => void handleSelectNlio(event.target.value)}
+                disabled={loading}
+                style={{ opacity: loading ? 0.6 : 1 }}
+              >
+                <option value="">— Select a pending interment —</option>
+                {pendingNlios.map((nlio) => (
+                  <option key={nlio.documentno} value={nlio.documentno}>
+                    {nlio.documentno} · {nlio.name1 || 'Unknown'} · {nlio.date_interment || '—'}
+                  </option>
+                ))}
+              </select>
+              {loading && (
+                <span style={{ position: 'absolute', right: 32, top: '50%', transform: 'translateY(-50%)' }}>
+                  <Spinner />
+                </span>
+              )}
             </div>
           </div>
 
-          {loading ? <div className="status-card">Loading...</div> : null}
+          {loading && (
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
+                padding: '10px 14px',
+                borderRadius: 8,
+                background: 'var(--color-background-info)',
+                color: 'var(--color-text-info)',
+                border: '0.5px solid var(--color-border-info)',
+                fontSize: 13,
+              }}
+            >
+              <Spinner size={13} />
+              Loading interment details...
+            </div>
+          )}
           {error ? <div className="status-card error">{error}</div> : null}
           {message ? <div className="status-card success">{message}</div> : null}
 
@@ -406,5 +456,6 @@ export default function NlioSupplierAssignmentPage() {
         </div>
       </div>
     </div>
+    </>
   );
 }

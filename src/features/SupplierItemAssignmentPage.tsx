@@ -15,6 +15,44 @@ import type {
   SupplierAssignableSupplier,
 } from '@/types/api';
 
+function Spinner({ size = 14 }: { size?: number }) {
+  return (
+    <span
+      style={{
+        display: 'inline-block',
+        width: size,
+        height: size,
+        border: '2px solid #bfdbfe',
+        borderTopColor: '#1d4ed8',
+        borderRadius: '50%',
+        animation: 'spin 0.7s linear infinite',
+        verticalAlign: 'middle',
+        flexShrink: 0,
+      }}
+    />
+  );
+}
+
+function SkeletonRow() {
+  return (
+    <tr>
+      {Array.from({ length: 5 }).map((_, i) => (
+        <td key={i}>
+          <div
+            style={{
+              height: 16,
+              borderRadius: 6,
+              background: 'var(--color-background-secondary)',
+              animation: 'pulse 1.4s ease-in-out infinite',
+              opacity: 0.7,
+            }}
+          />
+        </td>
+      ))}
+    </tr>
+  );
+}
+
 export default function SupplierItemAssignmentPage() {
   const [suppliers, setSuppliers] = useState<SupplierAssignableSupplier[]>([]);
   const [items, setItems] = useState<SupplierAssignableItem[]>([]);
@@ -126,142 +164,202 @@ export default function SupplierItemAssignmentPage() {
   }
 
   return (
-    <div className="page-shell plain">
-      <div className="center-column">
-        <div className="page-card wide stack">
+    <>
+      <style>{`
+        @keyframes spin { to { transform: rotate(360deg); } }
+        @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+      `}</style>
+
+      <div className="page-shell plain">
+        <div className="center-column">
+          <div className="page-card wide stack">
             <Link
               href="/supplierio"
-              style={{ backgroundColor: '#8b6b44', color: 'white', padding: '8px 12px', borderRadius: 4, textDecoration: 'none' , width: 'fit-content'}}
-              >
+              style={{ backgroundColor: '#8b6b44', color: 'white', padding: '8px 12px', borderRadius: 4, textDecoration: 'none', width: 'fit-content' }}
+            >
               Menu
             </Link>
-          <div className="row between">
-            <h1 style={{ margin: 0 }}>Supplier Item Assignment</h1>
-          </div>
-
-          {loading ? <div className="status-card">Loading assignment data...</div> : null}
-          {error ? <div className="status-card error">{error}</div> : null}
-          {message ? <div className="status-card success">{message}</div> : null}
-
-          <div className="page-card stack" style={{ padding: 18 }}>
-            <h2 style={{ margin: 0 }}>Assign Item to Supplier</h2>
-
-            <div>
-              <label className="helper">Supplier</label>
-              <select
-                className="select"
-                value={selectedBparId}
-                onChange={(e) => setSelectedBparId(e.target.value)}
-              >
-                <option value="">Select supplier</option>
-                {uniqueSuppliers.map((supplier, index) => (
-                  <option
-                    key={`${supplier.bpar_i_person_id}-${supplier.s_bpartner_id}-${index}`}
-                    value={supplier.bpar_i_person_id}
-                  >
-                    {supplier.name1} - {supplier.email_add || 'No email'}
-                  </option>
-                ))}
-              </select>
+            <div className="row between">
+              <h1 style={{ margin: 0 }}>Supplier Item Assignment</h1>
             </div>
 
-            {selectedSupplier ? (
-              <div className="status-card">
-                <div className="two-column">
-                  <div>
-                    <strong>bpar_i_person_id</strong>
-                    <br />
-                    {selectedSupplier.bpar_i_person_id}
-                  </div>
-                  <div>
-                    <strong>s_bpartner_id</strong>
-                    <br />
-                    {selectedSupplier.s_bpartner_id}
-                  </div>
-                  <div>
-                    <strong>Contact</strong>
-                    <br />
-                    {selectedSupplier.contact_number || '-'}
-                  </div>
-                  <div>
-                    <strong>Phone</strong>
-                    <br />
-                    {selectedSupplier.phone || '-'}
-                  </div>
-                </div>
-              </div>
-            ) : null}
-
-            <div>
-              <label className="helper">Supplier Item</label>
-              <select
-                className="select"
-                value={selectedItemId}
-                onChange={(event) => setSelectedItemId(event.target.value)}
+            {loading && (
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 10,
+                  padding: '12px 16px',
+                  borderRadius: 8,
+                  background: '#eff6ff',
+                  color: '#1d4ed8',
+                  border: '1px solid #bfdbfe',
+                  fontSize: 13,
+                  fontWeight: 500,
+                }}
               >
-                <option value="">Select item</option>
-                {items.map((item) => (
-                  <option key={item.id} value={item.id}>
-                    {item.item_category} - {item.item_name}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <button
-                className="button"
-                type="button"
-                onClick={() => void handleAssign()}
-                disabled={saving}
-              >
-                {saving ? 'Saving...' : 'Assign Item'}
-              </button>
-            </div>
-          </div>
-
-          <div className="page-card stack" style={{ padding: 18 }}>
-            <h2 style={{ margin: 0 }}>Assigned Supplier Items</h2>
-
-            {records.length === 0 ? (
-              <div className="status-card">No supplier item assignments found.</div>
-            ) : (
-              <div className="table-wrap">
-                <table className="table">
-                  <thead>
-                    <tr>
-                      <th>bpar_i_person_id</th>
-                      <th>s_bpartner_id</th>
-                      <th>Item</th>
-                      <th>Category</th>
-                      <th>Action</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {records.map((record) => (
-                      <tr key={record.id}>
-                        <td>{record.bpar_i_person_id}</td>
-                        <td>{record.s_bpartner_id}</td>
-                        <td>{record.item_name || '-'}</td>
-                        <td>{record.item_category || '-'}</td>
-                        <td>
-                          <button
-                            className="button danger small"
-                            type="button"
-                            onClick={() => void handleDelete(record.id)}
-                          >
-                            Remove
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                <Spinner size={14} />
+                Loading assignment data...
               </div>
             )}
+            {error ? <div className="status-card error">{error}</div> : null}
+            {message ? <div className="status-card success">{message}</div> : null}
+
+            <div className="page-card stack" style={{ padding: 18, opacity: loading ? 0.5 : 1, pointerEvents: loading ? 'none' : 'auto', transition: 'opacity 0.2s' }}>
+              <h2 style={{ margin: 0 }}>Assign Item to Supplier</h2>
+
+              <div>
+                <label className="helper">Supplier</label>
+                <div style={{ position: 'relative' }}>
+                  <select
+                    className="select"
+                    value={selectedBparId}
+                    onChange={(e) => setSelectedBparId(e.target.value)}
+                    disabled={loading}
+                    style={{ opacity: loading ? 0.6 : 1 }}
+                  >
+                    <option value="">{loading ? 'Loading suppliers...' : 'Select supplier'}</option>
+                    {uniqueSuppliers.map((supplier, index) => (
+                      <option
+                        key={`${supplier.bpar_i_person_id}-${supplier.s_bpartner_id}-${index}`}
+                        value={supplier.bpar_i_person_id}
+                      >
+                        {supplier.name1} - {supplier.email_add || 'No email'}
+                      </option>
+                    ))}
+                  </select>
+                  {loading && (
+                    <span style={{ position: 'absolute', right: 32, top: '50%', transform: 'translateY(-50%)' }}>
+                      <Spinner />
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {selectedSupplier ? (
+                <div className="status-card">
+                  <div className="two-column">
+                    <div>
+                      <strong>bpar_i_person_id</strong>
+                      <br />
+                      {selectedSupplier.bpar_i_person_id}
+                    </div>
+                    <div>
+                      <strong>s_bpartner_id</strong>
+                      <br />
+                      {selectedSupplier.s_bpartner_id}
+                    </div>
+                    <div>
+                      <strong>Contact</strong>
+                      <br />
+                      {selectedSupplier.contact_number || '-'}
+                    </div>
+                    <div>
+                      <strong>Phone</strong>
+                      <br />
+                      {selectedSupplier.phone || '-'}
+                    </div>
+                  </div>
+                </div>
+              ) : null}
+
+              <div>
+                <label className="helper">Supplier Item</label>
+                <div style={{ position: 'relative' }}>
+                  <select
+                    className="select"
+                    value={selectedItemId}
+                    onChange={(event) => setSelectedItemId(event.target.value)}
+                    disabled={loading}
+                    style={{ opacity: loading ? 0.6 : 1 }}
+                  >
+                    <option value="">{loading ? 'Loading items...' : 'Select item'}</option>
+                    {items.map((item) => (
+                      <option key={item.id} value={item.id}>
+                        {item.item_category} - {item.item_name}
+                      </option>
+                    ))}
+                  </select>
+                  {loading && (
+                    <span style={{ position: 'absolute', right: 32, top: '50%', transform: 'translateY(-50%)' }}>
+                      <Spinner />
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              <div>
+                <button
+                  className="button"
+                  type="button"
+                  onClick={() => void handleAssign()}
+                  disabled={saving || loading}
+                >
+                  {saving ? <><Spinner size={13} />&nbsp;Saving...</> : 'Assign Item'}
+                </button>
+              </div>
+            </div>
+
+            <div className="page-card stack" style={{ padding: 18 }}>
+              <h2 style={{ margin: 0 }}>Assigned Supplier Items</h2>
+
+              {loading ? (
+                <div className="table-wrap">
+                  <table className="table">
+                    <thead>
+                      <tr>
+                        <th>bpar_i_person_id</th>
+                        <th>s_bpartner_id</th>
+                        <th>Item</th>
+                        <th>Category</th>
+                        <th>Action</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {Array.from({ length: 4 }).map((_, i) => <SkeletonRow key={i} />)}
+                    </tbody>
+                  </table>
+                </div>
+              ) : records.length === 0 ? (
+                <div className="status-card">No supplier item assignments found.</div>
+              ) : (
+                <div className="table-wrap">
+                  <table className="table">
+                    <thead>
+                      <tr>
+                        <th>bpar_i_person_id</th>
+                        <th>s_bpartner_id</th>
+                        <th>Item</th>
+                        <th>Category</th>
+                        <th>Action</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {records.map((record) => (
+                        <tr key={record.id}>
+                          <td>{record.bpar_i_person_id}</td>
+                          <td>{record.s_bpartner_id}</td>
+                          <td>{record.item_name || '-'}</td>
+                          <td>{record.item_category || '-'}</td>
+                          <td>
+                            <button
+                              className="button danger small"
+                              type="button"
+                              onClick={() => void handleDelete(record.id)}
+                            >
+                              Remove
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }

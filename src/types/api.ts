@@ -97,6 +97,14 @@ export interface NlioRecord {
   contact_no?: string;
 }
 
+export interface PendingNlioItem {
+  bpar_i_person_id: number;
+  name1?: string;
+  documentno: string;
+  date_interment?: string;
+  contact_no?: string;
+}
+
 export interface SupplierByItemRecord {
   bpar_i_person_id: number;
   s_bpartner_id: number;

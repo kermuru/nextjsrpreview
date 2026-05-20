@@ -18,8 +18,8 @@ function Spinner({ size = 14 }: { size?: number }) {
         display: 'inline-block',
         width: size,
         height: size,
-        border: '2px solid var(--color-border-secondary)',
-        borderTopColor: 'var(--color-text-secondary)',
+        border: '2px solid #bfdbfe',
+        borderTopColor: '#1d4ed8',
         borderRadius: '50%',
         animation: 'spin 0.7s linear infinite',
         verticalAlign: 'middle',
@@ -204,6 +204,25 @@ export default function DiscordUserPage() {
               <h1 style={{ margin: 0 }}>Discord User Mapping</h1>
             </div>
 
+            {loadingBpar && (
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 10,
+                  padding: '12px 16px',
+                  borderRadius: 8,
+                  background: '#eff6ff',
+                  color: '#1d4ed8',
+                  border: '1px solid #bfdbfe',
+                  fontSize: 13,
+                  fontWeight: 500,
+                }}
+              >
+                <Spinner size={14} />
+                Loading supplier list...
+              </div>
+            )}
             {error ? <div className="status-card error">{error}</div> : null}
             {message ? <div className="status-card success">{message}</div> : null}
 
@@ -246,16 +265,17 @@ export default function DiscordUserPage() {
                   style={{
                     display: 'flex',
                     alignItems: 'center',
-                    gap: 8,
-                    padding: '8px 12px',
+                    gap: 10,
+                    padding: '12px 16px',
                     borderRadius: 8,
-                    background: 'var(--color-background-info)',
-                    color: 'var(--color-text-info)',
-                    border: '0.5px solid var(--color-border-info)',
+                    background: '#eff6ff',
+                    color: '#1d4ed8',
+                    border: '1px solid #bfdbfe',
                     fontSize: 13,
+                    fontWeight: 500,
                   }}
                 >
-                  <Spinner size={13} />
+                  <Spinner size={14} />
                   Fetching Discord record for this user...
                 </div>
               )}
@@ -281,24 +301,15 @@ export default function DiscordUserPage() {
               {/* ── discord_user_id ── */}
               <div>
                 <label className="helper">discord_user_id</label>
-                {loadingBpar ? (
+                {loadingBpar || loading ? (
                   <SkeletonField />
                 ) : (
-                  <div style={{ position: 'relative' }}>
-                    <input
-                      className="input"
-                      value={loading ? '' : discordUserId}
-                      onChange={(e) => setDiscordUserId(e.target.value)}
-                      placeholder={loading ? 'Fetching record...' : 'Enter Discord User ID'}
-                      disabled={loading}
-                      style={{ opacity: loading ? 0.6 : 1 }}
-                    />
-                    {loading && (
-                      <span style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)' }}>
-                        <Spinner />
-                      </span>
-                    )}
-                  </div>
+                  <input
+                    className="input"
+                    value={discordUserId}
+                    onChange={(e) => setDiscordUserId(e.target.value)}
+                    placeholder="Enter Discord User ID"
+                  />
                 )}
               </div>
 
