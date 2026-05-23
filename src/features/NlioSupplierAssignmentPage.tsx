@@ -52,6 +52,7 @@ export default function NlioSupplierAssignmentPage() {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [notifying, setNotifying] = useState(false);
+  const [intermentDate, setIntermentDate] = useState('');
   const [intermentTime, setIntermentTime] = useState('');
   const [massTime, setMassTime] = useState('');
   const [error, setError] = useState('');
@@ -155,6 +156,7 @@ export default function NlioSupplierAssignmentPage() {
         s_bpartner_id:    Number(partnerId),
         supplier_item_id: Number(selectedItemId),
         assigned_by:      assignedBy.trim() || undefined,
+        interment_date:   intermentDate.trim() || undefined,
         interment_time:   intermentTime.trim() || undefined,
         mass_time:        massTime.trim() || undefined,
       });
@@ -181,7 +183,8 @@ export default function NlioSupplierAssignmentPage() {
     setError('');
     setMessage('');
     try {
-      const overrides: { interment_time?: string; mass_time?: string } = {};
+      const overrides: { interment_date?: string; interment_time?: string; mass_time?: string } = {};
+      if (intermentDate.trim()) overrides.interment_date = intermentDate.trim();
       if (intermentTime.trim()) overrides.interment_time = intermentTime.trim();
       if (massTime.trim())      overrides.mass_time      = massTime.trim();
       const res = await notifyMarshalsByDocument(documentNo.trim(), overrides);
@@ -316,6 +319,15 @@ export default function NlioSupplierAssignmentPage() {
               </div>
               <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
                 <div style={{ flex: 1, minWidth: 180 }}>
+                  <label className="helper">Interment Date (override)</label>
+                  <input
+                    className="input"
+                    value={intermentDate}
+                    onChange={(e) => setIntermentDate(e.target.value)}
+                    placeholder="e.g. May 25, 2026"
+                  />
+                </div>
+                <div style={{ flex: 1, minWidth: 180 }}>
                   <label className="helper">Interment Time (override)</label>
                   <input
                     className="input"
@@ -335,7 +347,7 @@ export default function NlioSupplierAssignmentPage() {
                 </div>
               </div>
               <div style={{ fontSize: '0.75rem', color: '#888' }}>
-                Time overrides apply to both supplier assignments and marshal notifications — sent to Discord only, not saved to the database.
+                Schedule overrides apply to both supplier assignments and marshal notifications — sent to Discord only, not saved to the database.
               </div>
               <div>
                 <button

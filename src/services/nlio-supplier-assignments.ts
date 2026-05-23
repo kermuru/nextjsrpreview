@@ -28,6 +28,7 @@ export function createNlioAssignment(payload: {
   s_bpartner_id: number;
   supplier_item_id: number;
   assigned_by?: string;
+  interment_date?: string;
   interment_time?: string;
   mass_time?: string;
 }) {
@@ -45,7 +46,7 @@ export function deleteNlioAssignment(id: number) {
 
 export function notifyMarshalsByDocument(
   documentNo: string,
-  overrides?: { interment_time?: string; mass_time?: string },
+  overrides?: { interment_date?: string; interment_time?: string; mass_time?: string },
 ) {
   return apiRequest<{ success: boolean; documentno: string; message: string }>(
     '/interment/notify-marshal-document',
