@@ -12,10 +12,10 @@ interface StubRow {
   stubto: number;
   length: number;
   ad_org_id: number;
-  is_active: number;
+  is_active: 0 | 1;
   date_updated: string;
   doc_i_submod_id: number;
-  is_draft: number;
+  is_draft: 0 | 1;
   next_docno: string;
 }
 
@@ -35,21 +35,22 @@ interface CorrectResponse {
     prefix: string;
     currentno: number;
     stubto: number;
-    date_updated: string;
+    next_docno: string;
   };
 }
 
 export default function NlioStubCorrectionPage() {
-  const [token, setToken]             = useState('');
-
-  const [stub, setStub]               = useState<StubRow | null>(null);
-  const [verifying, setVerifying]     = useState(false);
+  const [token, setToken]         = useState('');
+  const [stub, setStub]           = useState<StubRow | null>(null);
+  const [verifying, setVerifying] = useState(false);
   const [verifyError, setVerifyError] = useState<string | null>(null);
 
-  const [targetNo, setTargetNo]       = useState('');
-  const [correcting, setCorrecting]   = useState(false);
+  const [targetNo, setTargetNo]           = useState('');
+  const [correcting, setCorrecting]       = useState(false);
   const [correctResult, setCorrectResult] = useState<CorrectResponse | null>(null);
   const [correctError, setCorrectError]   = useState<string | null>(null);
+
+  const headers = { 'X-Script-Token': token };
 
   async function handleVerify() {
     setVerifying(true);
@@ -58,9 +59,7 @@ export default function NlioStubCorrectionPage() {
     setCorrectResult(null);
     setCorrectError(null);
     try {
-      const res = await apiRequest<VerifyResponse>('/script/nlio/verify', {
-        headers: { 'X-Script-Token': token },
-      });
+      const res = await apiRequest<VerifyResponse>('/script/nlio/verify', { headers });
       setStub(res.stub);
     } catch (e) {
       setVerifyError(isApiError(e) ? e.message : 'Failed to reach the server.');
@@ -82,11 +81,8 @@ export default function NlioStubCorrectionPage() {
     try {
       const res = await apiRequest<CorrectResponse>('/script/nlio/correct', {
         method: 'POST',
-        body: JSON.stringify({
-          expected_currentno: stub.currentno,
-          target_currentno: target,
-        }),
-        headers: { 'X-Script-Token': token },
+        body: JSON.stringify({ expected_currentno: stub.currentno, target_currentno: target }),
+        headers,
       });
       setCorrectResult(res);
       setStub((prev) => prev ? { ...prev, currentno: res.new_currentno } : prev);
@@ -155,34 +151,12 @@ export default function NlioStubCorrectionPage() {
               <div className="table-wrap" style={{ marginTop: '12px' }}>
                 <table className="table">
                   <tbody>
-                    <tr>
-                      <th>Stub ID</th>
-                      <td>{stub.doc_i_stub_id}</td>
-                    </tr>
-                    <tr>
-                      <th>Prefix</th>
-                      <td>{stub.prefix}</td>
-                    </tr>
-                    <tr>
-                      <th>Current No</th>
-                      <td>
-                        <strong>{stub.currentno}</strong>
-                      </td>
-                    </tr>
-                    <tr>
-                      <th>Next Docno</th>
-                      <td>
-                        <span className="pill">{stub.next_docno}</span>
-                      </td>
-                    </tr>
-                    <tr>
-                      <th>Stub Range</th>
-                      <td>{stub.currentno} – {stub.stubto}</td>
-                    </tr>
-                    <tr>
-                      <th>Last Updated</th>
-                      <td className="muted">{stub.date_updated}</td>
-                    </tr>
+                    <tr><th>Stub ID</th><td>{stub.doc_i_stub_id}</td></tr>
+                    <tr><th>Prefix</th><td>{stub.prefix}</td></tr>
+                    <tr><th>Current No</th><td><strong>{stub.currentno}</strong></td></tr>
+                    <tr><th>Next Docno</th><td><span className="pill">{stub.next_docno}</span></td></tr>
+                    <tr><th>Stub Range</th><td>{stub.currentno} – {stub.stubto}</td></tr>
+                    <tr><th>Last Updated</th><td className="muted">{stub.date_updated}</td></tr>
                   </tbody>
                 </table>
               </div>
@@ -190,72 +164,71 @@ export default function NlioStubCorrectionPage() {
           </div>
 
           {/* ── STEP 2 ── */}
-          <div
-            className="status-card"
-            style={{
-              border: '1px solid var(--border)',
-              opacity: stub ? 1 : 0.45,
-              pointerEvents: stub ? 'auto' : 'none',
-            }}
-          >
-            <strong>Step 2 — Correct</strong>
-            <p className="helper" style={{ margin: '2px 0 12px' }}>
-              Only runs if the live counter matches the expected value.
-              {!stub && ' Run Step 1 first.'}
-            </p>
-
-            <div className="stack" style={{ gap: '10px' }}>
-              <div>
-                <label className="helper">Expected current no (from Step 1)</label>
-                <input
-                  className="input"
-                  type="number"
-                  value={stub?.currentno ?? ''}
-                  readOnly
-                  style={{ background: '#f4f4f4', cursor: 'not-allowed' }}
-                />
-              </div>
-              <div>
-                <label className="helper">Target current no (new value)</label>
-                <input
-                  className="input"
-                  type="number"
-                  placeholder="e.g. 934"
-                  value={targetNo}
-                  onChange={(e) => {
-                    setTargetNo(e.target.value);
-                    setCorrectError(null);
-                    setCorrectResult(null);
-                  }}
-                />
-              </div>
-
-              {correctError && (
-                <p className="error-text" style={{ margin: 0 }}>{correctError}</p>
-              )}
-
-              {correctResult && (
-                <div className="status-card success" style={{ padding: '12px' }}>
-                  <strong>Counter advanced successfully.</strong>
-                  <p style={{ margin: '4px 0 0' }}>
-                    {correctResult.previous_currentno} → <strong>{correctResult.new_currentno}</strong>
-                    &nbsp;· rows affected: {correctResult.rows_affected}
-                  </p>
-                  <p className="helper" style={{ margin: '4px 0 0' }}>
-                    Next docno: <strong>{correctResult.stub_after.prefix}{String(correctResult.new_currentno).padStart(7, '0')}</strong>
-                  </p>
-                </div>
-              )}
-
-              <button
-                className="button danger"
-                onClick={handleCorrect}
-                disabled={correcting || !stub || !targetNo}
-              >
-                {correcting ? 'Applying…' : 'Apply Correction'}
-              </button>
+          {!stub ? (
+            <div className="status-card" style={{ border: '1px solid var(--border)', opacity: 0.45 }}>
+              <strong>Step 2 — Correct</strong>
+              <p className="helper" style={{ margin: '2px 0 0' }}>Run Step 1 first to enable this step.</p>
             </div>
-          </div>
+          ) : (
+            <div className="status-card" style={{ border: '1px solid var(--border)' }}>
+              <strong>Step 2 — Correct</strong>
+              <p className="helper" style={{ margin: '2px 0 12px' }}>
+                Only runs if the live counter matches the expected value.
+              </p>
+
+              <div className="stack" style={{ gap: '10px' }}>
+                <div>
+                  <label className="helper">Expected current no (from Step 1)</label>
+                  <input
+                    className="input"
+                    type="number"
+                    value={stub.currentno}
+                    readOnly
+                    style={{ background: '#f4f4f4', cursor: 'not-allowed' }}
+                  />
+                </div>
+                <div>
+                  <label className="helper">Target current no (new value)</label>
+                  <input
+                    className="input"
+                    type="number"
+                    placeholder="e.g. 934"
+                    value={targetNo}
+                    onChange={(e) => {
+                      setTargetNo(e.target.value);
+                      setCorrectError(null);
+                      setCorrectResult(null);
+                    }}
+                  />
+                </div>
+
+                {correctError && (
+                  <p className="error-text" style={{ margin: 0 }}>{correctError}</p>
+                )}
+
+                {correctResult && (
+                  <div className="status-card success" style={{ padding: '12px' }}>
+                    <strong>Counter advanced successfully.</strong>
+                    <p style={{ margin: '4px 0 0' }}>
+                      {correctResult.previous_currentno} → <strong>{correctResult.new_currentno}</strong>
+                      &nbsp;· rows affected: {correctResult.rows_affected}
+                    </p>
+                    <p className="helper" style={{ margin: '4px 0 0' }}>
+                      Next docno: <strong>{correctResult.stub_after.next_docno}</strong>
+                    </p>
+                  </div>
+                )}
+
+                <button
+                  className="button danger"
+                  onClick={handleCorrect}
+                  disabled={correcting || !targetNo}
+                >
+                  {correcting ? 'Applying…' : 'Apply Correction'}
+                </button>
+              </div>
+            </div>
+          )}
 
         </div>
       </div>
