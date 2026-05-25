@@ -32,11 +32,6 @@ const adminMenuItems = [
     description: 'Manage Discord user mapping for suppliers/admin use.',
     href: '/supplierio/discord',
   },
-  {
-    title: 'NLIO Stub Correction',
-    description: 'Advance the NLIO document number counter in doc_i_stub.',
-    href: '/script/nlio',
-  },
 ];
 
 export default function HomePage() {
