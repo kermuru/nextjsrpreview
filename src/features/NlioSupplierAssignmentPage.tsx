@@ -9,14 +9,14 @@ import {
   deleteNlioAssignment,
   getAssignmentsByDocumentNo,
   getNlioByDocumentNo,
-  getPendingNlios,
+  getRecentNlios,
   getSuppliersByItem,
   notifyMarshalsByDocument,
 } from '@/services/nlio-supplier-assignments';
+import type { RecentNlioItem } from '@/services/nlio-supplier-assignments';
 import type {
   NlioAssignmentRecord,
   NlioRecord,
-  PendingNlioItem,
   SupplierAssignableItem,
   SupplierByItemRecord,
 } from '@/types/api';
@@ -40,7 +40,9 @@ function Spinner({ size = 14 }: { size?: number }) {
 }
 
 export default function NlioSupplierAssignmentPage() {
-  const [pendingNlios, setPendingNlios] = useState<PendingNlioItem[]>([]);
+  const [recentNlios, setRecentNlios] = useState<RecentNlioItem[]>([]);
+  const [days, setDays] = useState<7 | 15 | 30>(7);
+  const [listLoading, setListLoading] = useState(false);
   const [documentNo, setDocumentNo] = useState('');
   const [assignedBy, setAssignedBy] = useState('');
   const [items, setItems] = useState<SupplierAssignableItem[]>([]);
@@ -60,20 +62,23 @@ export default function NlioSupplierAssignmentPage() {
 
   useEffect(() => {
     async function loadInitial() {
+      setListLoading(true);
       try {
-        const [itemsData, pendingData] = await Promise.all([
+        const [itemsData, recentData] = await Promise.all([
           getAssignableItems(),
-          getPendingNlios(),
+          getRecentNlios(days),
         ]);
         setItems(itemsData);
-        setPendingNlios(pendingData);
+        setRecentNlios(recentData);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load data.');
+      } finally {
+        setListLoading(false);
       }
     }
 
     void loadInitial();
-  }, []);
+  }, [days]);
 
   async function handleSelectNlio(docNo: string) {
     setDocumentNo(docNo);
@@ -238,28 +243,159 @@ export default function NlioSupplierAssignmentPage() {
           </div>
 
           <div>
-            <label className="helper">Select Interment Order</label>
-            <div style={{ position: 'relative' }}>
-              <select
-                className="select"
-                value={documentNo}
-                onChange={(event) => void handleSelectNlio(event.target.value)}
-                disabled={loading}
-                style={{ opacity: loading ? 0.6 : 1 }}
-              >
-                <option value="">— Select a pending interment —</option>
-                {pendingNlios.map((nlio) => (
-                  <option key={nlio.documentno} value={nlio.documentno}>
-                    {nlio.documentno} · {nlio.name1 || 'Unknown'} · {nlio.date_interment || '—'}
-                  </option>
+            <label className="helper" style={{ marginBottom: 8, display: 'block' }}>Interment Orders</label>
+
+            {/* Filter bar — sits ABOVE the list, never inside scroll */}
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              padding: '8px 12px',
+              background: '#f3f4f6',
+              border: '1px solid #d1d5db',
+              borderRadius: '8px 8px 0 0',
+              gap: 10,
+            }}>
+              <span style={{ fontFamily: 'Nunito, sans-serif', fontSize: '0.75rem', color: '#6b7280', whiteSpace: 'nowrap' }}>
+                {listLoading
+                  ? <><Spinner size={12} />&nbsp; Fetching…</>
+                  : <><strong style={{ color: '#111827' }}>{recentNlios.length}</strong> order{recentNlios.length !== 1 ? 's' : ''}</>
+                }
+              </span>
+
+              <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+                {([
+                  { d: 7,  label: '7 days'  },
+                  { d: 15, label: '15 days' },
+                  { d: 30, label: '30 days' },
+                ] as const).map(({ d, label }) => (
+                  <button
+                    key={d}
+                    onClick={() => { setDays(d); setDocumentNo(''); }}
+                    disabled={listLoading}
+                    style={{
+                      padding: '4px 12px',
+                      borderRadius: 6,
+                      border: `1.5px solid ${days === d ? '#0a352d' : '#9ca3af'}`,
+                      background: days === d ? '#0a352d' : '#ffffff',
+                      color: days === d ? '#ffffff' : '#374151',
+                      fontFamily: 'Nunito, sans-serif',
+                      fontSize: '0.72rem',
+                      fontWeight: 600,
+                      cursor: listLoading ? 'not-allowed' : 'pointer',
+                      opacity: listLoading ? 0.5 : 1,
+                      whiteSpace: 'nowrap',
+                      minWidth: 62,
+                      textAlign: 'center',
+                    }}
+                  >
+                    {label}
+                  </button>
                 ))}
-              </select>
-              {loading && (
-                <span style={{ position: 'absolute', right: 32, top: '50%', transform: 'translateY(-50%)' }}>
-                  <Spinner />
-                </span>
-              )}
+              </div>
             </div>
+
+            {/* Scrollable IO list */}
+            <div style={{ maxHeight: 290, overflowY: 'auto', border: '1px solid #d1d5db', borderTop: 'none', borderRadius: '0 0 8px 8px' }}>
+              {listLoading ? (
+                <div style={{
+                  padding: '32px 20px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 12,
+                }}>
+                  <Spinner size={24} />
+                  <div style={{ textAlign: 'center' }}>
+                    <div style={{ fontFamily: 'Nunito, sans-serif', fontSize: '0.88rem', fontWeight: 700, color: 'var(--color-text-primary)' }}>
+                      Fetching interment orders…
+                    </div>
+                    <div style={{ fontFamily: 'Nunito, sans-serif', fontSize: '0.75rem', color: 'var(--color-text-secondary)', marginTop: 4 }}>
+                      Looking up the last {days} days
+                    </div>
+                  </div>
+                </div>
+              ) : recentNlios.length === 0 ? (
+                <div style={{
+                  padding: '32px 20px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  gap: 8,
+                }}>
+                  <span style={{ fontSize: '1.5rem' }}>📋</span>
+                  <div style={{ fontFamily: 'Nunito, sans-serif', fontSize: '0.88rem', fontWeight: 700, color: 'var(--color-text-primary)', textAlign: 'center' }}>
+                    No interment orders found
+                  </div>
+                  <div style={{ fontFamily: 'Nunito, sans-serif', fontSize: '0.75rem', color: 'var(--color-text-secondary)', textAlign: 'center' }}>
+                    No orders within the last {days} days. Try expanding to 15 or 30 days.
+                  </div>
+                </div>
+              ) : (
+                recentNlios.map((nlio) => {
+                  const allDone = nlio.assigned_count === nlio.total_items;
+                  const noneDone = nlio.assigned_count === 0;
+                  const isSelected = documentNo === nlio.documentno;
+                  return (
+                    <button
+                      key={nlio.documentno}
+                      onClick={() => void handleSelectNlio(nlio.documentno)}
+                      style={{
+                        width: '100%',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        padding: '10px 14px',
+                        border: 'none',
+                        borderBottom: '1px solid var(--color-border-secondary)',
+                        background: isSelected ? 'var(--color-accent)' : 'transparent',
+                        color: isSelected ? '#fff' : 'inherit',
+                        cursor: 'pointer',
+                        textAlign: 'left',
+                        gap: 10,
+                      }}
+                    >
+                      <div>
+                        <div style={{ fontFamily: 'Nunito, sans-serif', fontSize: '0.82rem', fontWeight: 700 }}>
+                          {nlio.documentno}
+                        </div>
+                        <div style={{ fontFamily: 'Nunito, sans-serif', fontSize: '0.72rem', opacity: 0.8 }}>
+                          {nlio.name1 || '—'} · {nlio.date_interment || '—'}
+                        </div>
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+                        {(nlio.item_status ?? []).map(item => (
+                          <span
+                            key={item.id}
+                            title={item.item_name}
+                            style={{
+                              width: 8,
+                              height: 8,
+                              borderRadius: '50%',
+                              background: item.assigned
+                                ? (isSelected ? '#fff' : '#16a34a')
+                                : (isSelected ? 'rgba(255,255,255,0.4)' : '#d1d5db'),
+                              display: 'inline-block',
+                              flexShrink: 0,
+                            }}
+                          />
+                        ))}
+                        <span style={{
+                          fontFamily: 'Nunito, sans-serif',
+                          fontSize: '0.68rem',
+                          fontWeight: 700,
+                          color: isSelected ? '#fff' : allDone ? '#16a34a' : noneDone ? '#9ca3af' : '#b45309',
+                          marginLeft: 4,
+                        }}>
+                          {nlio.assigned_count}/{nlio.total_items}
+                        </span>
+                      </div>
+                    </button>
+                  );
+                })
+              )}
+            </div>{/* end scrollable list */}
           </div>
 
           {loading && (

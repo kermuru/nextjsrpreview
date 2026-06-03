@@ -10,6 +10,22 @@ export function getPendingNlios() {
   return apiRequest<PendingNlioItem[]>('/supplierio/nlio/pending');
 }
 
+export interface NlioItemStatus {
+  id: number;
+  item_name: string;
+  assigned: boolean;
+}
+
+export interface RecentNlioItem extends PendingNlioItem {
+  assigned_count: number;
+  total_items: number;
+  item_status: NlioItemStatus[];
+}
+
+export function getRecentNlios(days: 7 | 15 | 30) {
+  return apiRequest<RecentNlioItem[]>(`/supplierio/nlio/recent?days=${days}`);
+}
+
 export function getNlioByDocumentNo(documentNo: string) {
   return apiRequest<NlioRecord[]>(`/supplierio/nlio/${encodeURIComponent(documentNo)}`);
 }
