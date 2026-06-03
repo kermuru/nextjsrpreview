@@ -8,12 +8,13 @@ import {
   createNlioAssignment,
   deleteNlioAssignment,
   getAssignmentsByDocumentNo,
+  getBudgetByDocumentNo,
   getNlioByDocumentNo,
   getRecentNlios,
   getSuppliersByItem,
   notifyMarshalsByDocument,
 } from '@/services/nlio-supplier-assignments';
-import type { RecentNlioItem } from '@/services/nlio-supplier-assignments';
+import type { BudgetAmountItem, RecentNlioItem } from '@/services/nlio-supplier-assignments';
 import type {
   NlioAssignmentRecord,
   NlioRecord,
@@ -59,6 +60,8 @@ export default function NlioSupplierAssignmentPage() {
   const [massTime, setMassTime] = useState('');
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
+  const [budgetAmounts, setBudgetAmounts] = useState<BudgetAmountItem[]>([]);
+  const [serviceAmount, setServiceAmount] = useState<string>('');
 
   useEffect(() => {
     async function loadInitial() {
@@ -92,12 +95,16 @@ export default function NlioSupplierAssignmentPage() {
 
     setLoading(true);
     try {
-      const [nlioData, assignmentData] = await Promise.all([
+      const [nlioData, assignmentData, budgetData] = await Promise.all([
         getNlioByDocumentNo(docNo),
         getAssignmentsByDocumentNo(docNo),
+        getBudgetByDocumentNo(docNo).catch(() => []),
       ]);
       setNlioRecords(nlioData);
       setAssignments(assignmentData);
+      setBudgetAmounts(budgetData);
+      setServiceAmount('');
+      setSelectedItemId('');
     } catch (err) {
       if (isApiError(err)) {
         setError(err.message);
@@ -115,6 +122,10 @@ export default function NlioSupplierAssignmentPage() {
     setSelectedItemId(itemId);
     setSelectedSupplierKey('');
     setSuppliers([]);
+
+    // Auto-fill budget amount for selected item
+    const budgetItem = budgetAmounts.find(b => String(b.supplier_item_id) === itemId);
+    setServiceAmount(budgetItem?.budget_amount != null ? String(budgetItem.budget_amount) : '');
 
     if (!itemId) return;
 
@@ -161,6 +172,7 @@ export default function NlioSupplierAssignmentPage() {
         s_bpartner_id:    Number(partnerId),
         supplier_item_id: Number(selectedItemId),
         assigned_by:      assignedBy.trim() || undefined,
+        service_amount:   serviceAmount ? Number(serviceAmount) : undefined,
         interment_date:   intermentDate.trim() || undefined,
         interment_time:   intermentTime.trim() || undefined,
         mass_time:        massTime.trim() || undefined,
@@ -535,6 +547,26 @@ export default function NlioSupplierAssignmentPage() {
                   </option>
                 ))}
               </select>
+            </div>
+
+            <div>
+              <label className="helper">Service Amount (₱)</label>
+              <input
+                className="input"
+                type="number"
+                min="0"
+                step="0.01"
+                value={serviceAmount}
+                onChange={(event) => setServiceAmount(event.target.value)}
+                placeholder="Auto-filled from BOQ budget (editable)"
+                style={{ fontFamily: 'monospace' }}
+              />
+              {serviceAmount && budgetAmounts.find(b => String(b.supplier_item_id) === selectedItemId)?.budget_amount != null &&
+                Number(serviceAmount) !== budgetAmounts.find(b => String(b.supplier_item_id) === selectedItemId)!.budget_amount && (
+                <small style={{ color: 'var(--color-warning, #b45309)', fontSize: '0.72rem' }}>
+                  ⚠ Amount differs from BOQ budget (₱{budgetAmounts.find(b => String(b.supplier_item_id) === selectedItemId)?.budget_amount?.toLocaleString()})
+                </small>
+              )}
             </div>
 
             <div>

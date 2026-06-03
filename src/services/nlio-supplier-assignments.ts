@@ -44,6 +44,7 @@ export function createNlioAssignment(payload: {
   s_bpartner_id: number;
   supplier_item_id: number;
   assigned_by?: string;
+  service_amount?: number;
   interment_date?: string;
   interment_time?: string;
   mass_time?: string;
@@ -52,6 +53,39 @@ export function createNlioAssignment(payload: {
     method: 'POST',
     body: JSON.stringify(payload),
   });
+}
+
+export interface BudgetAmountItem {
+  supplier_item_id: number;
+  item_name: string;
+  budget_amount: number | null;
+  description: string | null;
+}
+
+export function getBudgetByDocumentNo(documentNo: string) {
+  return apiRequest<BudgetAmountItem[]>(`/supplierio/nlio/budget/${encodeURIComponent(documentNo)}`);
+}
+
+export interface ServiceOrderRecord {
+  id: number;
+  document_no: string;
+  bpar_i_person_id: number;
+  s_bpartner_id: number;
+  supplier_item_id: number;
+  assigned_by: string | null;
+  service_amount: number | null;
+  notified_at: string | null;
+  supplier_response: 'accepted' | 'declined' | null;
+  responded_at: string | null;
+  created_at: string | null;
+  item_name: string | null;
+  item_category: string | null;
+  supplier_name: string | null;
+  date_interment: string | null;
+}
+
+export function getServiceOrders() {
+  return apiRequest<ServiceOrderRecord[]>('/supplierio/nlio/service-orders');
 }
 
 export function deleteNlioAssignment(id: number) {

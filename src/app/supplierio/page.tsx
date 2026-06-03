@@ -20,6 +20,9 @@ export default function SupplierIoPage() {
             <Link className="button" href="/supplierio/nlio-assignment">
               NLIO Supplier Assignment
             </Link>
+            <Link className="button" href="/supplierio/nlio-dashboard">
+              Service Order Dashboard
+            </Link>
           </div>
         </div>
       </div>
