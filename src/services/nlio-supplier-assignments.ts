@@ -94,6 +94,18 @@ export function deleteNlioAssignment(id: number) {
   });
 }
 
+export interface AutoAssignResult {
+  ok: boolean;
+  message: string;
+  output: string;
+}
+
+export function triggerAutoAssign(days = 30) {
+  return apiRequest<AutoAssignResult>(`/supplierio/nlio/auto-assign?days=${days}`, {
+    method: 'POST',
+  });
+}
+
 export function notifyMarshalsByDocument(
   documentNo: string,
   overrides?: { interment_date?: string; interment_time?: string; mass_time?: string },

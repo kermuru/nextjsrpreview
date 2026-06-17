@@ -13,6 +13,7 @@ import {
   getRecentNlios,
   getSuppliersByItem,
   notifyMarshalsByDocument,
+  triggerAutoAssign,
 } from '@/services/nlio-supplier-assignments';
 import type { BudgetAmountItem, RecentNlioItem } from '@/services/nlio-supplier-assignments';
 import type {
@@ -55,6 +56,7 @@ export default function NlioSupplierAssignmentPage() {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [notifying, setNotifying] = useState(false);
+  const [autoAssigning, setAutoAssigning] = useState(false);
   const [intermentDate, setIntermentDate] = useState('');
   const [intermentTime, setIntermentTime] = useState('');
   const [massTime, setMassTime] = useState('');
@@ -146,6 +148,28 @@ export default function NlioSupplierAssignmentPage() {
   async function refreshAssignments() {
     if (!documentNo.trim()) return;
     setAssignments(await getAssignmentsByDocumentNo(documentNo.trim()));
+  }
+
+  async function handleAutoAssign() {
+    setAutoAssigning(true);
+    setError('');
+    setMessage('');
+    try {
+      const res = await triggerAutoAssign(30);
+      setMessage(res.message);
+      // Refresh the list and current document assignments after auto-assign
+      const [recentData] = await Promise.all([
+        getRecentNlios(days),
+      ]);
+      setRecentNlios(recentData);
+      if (documentNo.trim()) {
+        await refreshAssignments();
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Auto-assign failed.');
+    } finally {
+      setAutoAssigning(false);
+    }
   }
 
   async function handleAssign() {
@@ -252,6 +276,29 @@ export default function NlioSupplierAssignmentPage() {
           </Link>
           <div className="row between">
             <h1 style={{ margin: 0 }}>NLIO Supplier Assignment</h1>
+            <button
+              type="button"
+              onClick={() => void handleAutoAssign()}
+              disabled={autoAssigning}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 7,
+                background: autoAssigning ? '#6b7280' : '#0a352d',
+                color: '#fff',
+                border: 'none',
+                borderRadius: 8,
+                padding: '8px 18px',
+                fontFamily: 'Nunito, sans-serif',
+                fontSize: '0.82rem',
+                fontWeight: 700,
+                cursor: autoAssigning ? 'not-allowed' : 'pointer',
+                whiteSpace: 'nowrap',
+                flexShrink: 0,
+              }}
+            >
+              {autoAssigning ? <><Spinner size={13} /> Running…</> : '⚡ Auto Assign All'}
+            </button>
           </div>
 
           <div>

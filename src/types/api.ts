@@ -162,3 +162,12 @@ export interface BparDiscordUserIOResponse {
   record: BparDiscordUserIO;
   message: string;
 }
+
+export interface MarshalDiscordUser {
+  id: number;
+  discord_user_id: string;
+  name: string;
+  is_active: boolean;
+  created_at?: string;
+  updated_at?: string;
+}
