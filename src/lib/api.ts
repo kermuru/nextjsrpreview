@@ -1,5 +1,5 @@
-// const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'https://api.rp-vespera.cloud/api';
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
+// const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'https://api.rp-vespera.cloud/api';
 // const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'https://staging.rp-vespera.cloud/api';
 //const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'https://springgreen-jellyfish-261481.hostingersite.com/api';
 
@@ -28,6 +28,8 @@ function getMessage(payload: unknown, fallback: string): string {
 export async function apiRequest<T>(path: string, init: RequestInit = {}): Promise<T> {
   const url = path.startsWith('http') ? path : `${API_BASE}${path.startsWith('/') ? path : `/${path}`}`;
   const headers = new Headers(init.headers || {});
+
+  headers.set('Accept', 'application/json');
 
   if (init.body && !(init.body instanceof FormData) && !headers.has('Content-Type')) {
     headers.set('Content-Type', 'application/json');
