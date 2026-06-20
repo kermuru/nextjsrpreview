@@ -1,5 +1,8 @@
 // const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
+
+#live cred
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'https://api.rp-vespera.cloud/api';
+
 // const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'https://staging.rp-vespera.cloud/api';
 //const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'https://springgreen-jellyfish-261481.hostingersite.com/api';
 
