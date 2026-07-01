@@ -8,12 +8,14 @@ import {
   createNlioAssignment,
   deleteNlioAssignment,
   getAssignmentsByDocumentNo,
+  getAutoAssignSettings,
   getBudgetByDocumentNo,
   getNlioByDocumentNo,
   getRecentNlios,
   getSuppliersByItem,
   notifyMarshalsByDocument,
   triggerAutoAssign,
+  updateAutoAssignSettings,
 } from '@/services/nlio-supplier-assignments';
 import type { BudgetAmountItem, RecentNlioItem } from '@/services/nlio-supplier-assignments';
 import type {
@@ -57,6 +59,8 @@ export default function NlioSupplierAssignmentPage() {
   const [saving, setSaving] = useState(false);
   const [notifying, setNotifying] = useState(false);
   const [autoAssigning, setAutoAssigning] = useState(false);
+  const [scheduleEnabled, setScheduleEnabled] = useState<boolean | null>(null);
+  const [toggling, setToggling] = useState(false);
   const [intermentDate, setIntermentDate] = useState('');
   const [intermentTime, setIntermentTime] = useState('');
   const [massTime, setMassTime] = useState('');
@@ -69,12 +73,14 @@ export default function NlioSupplierAssignmentPage() {
     async function loadInitial() {
       setListLoading(true);
       try {
-        const [itemsData, recentData] = await Promise.all([
+        const [itemsData, recentData, settingsRes] = await Promise.all([
           getAssignableItems(),
           getRecentNlios(days),
+          getAutoAssignSettings().catch(() => null),
         ]);
         setItems(itemsData);
         setRecentNlios(recentData);
+        if (settingsRes) setScheduleEnabled(settingsRes.data.enabled);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load data.');
       } finally {
@@ -148,6 +154,20 @@ export default function NlioSupplierAssignmentPage() {
   async function refreshAssignments() {
     if (!documentNo.trim()) return;
     setAssignments(await getAssignmentsByDocumentNo(documentNo.trim()));
+  }
+
+  async function handleToggleSchedule() {
+    if (scheduleEnabled === null || toggling) return;
+    const next = !scheduleEnabled;
+    setToggling(true);
+    try {
+      const res = await updateAutoAssignSettings(next);
+      setScheduleEnabled(res.data.enabled);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to update schedule setting.');
+    } finally {
+      setToggling(false);
+    }
   }
 
   async function handleAutoAssign() {
@@ -274,31 +294,85 @@ export default function NlioSupplierAssignmentPage() {
           >
             Menu
           </Link>
-          <div className="row between">
+          <div className="row between" style={{ alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
             <h1 style={{ margin: 0 }}>NLIO Supplier Assignment</h1>
-            <button
-              type="button"
-              onClick={() => void handleAutoAssign()}
-              disabled={autoAssigning}
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 7,
-                background: autoAssigning ? '#6b7280' : '#0a352d',
-                color: '#fff',
-                border: 'none',
-                borderRadius: 8,
-                padding: '8px 18px',
-                fontFamily: 'Nunito, sans-serif',
-                fontSize: '0.82rem',
-                fontWeight: 700,
-                cursor: autoAssigning ? 'not-allowed' : 'pointer',
-                whiteSpace: 'nowrap',
-                flexShrink: 0,
-              }}
-            >
-              {autoAssigning ? <><Spinner size={13} /> Running…</> : '⚡ Auto Assign All'}
-            </button>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
+              {/* Schedule on/off toggle */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={scheduleEnabled ?? false}
+                  onClick={() => void handleToggleSchedule()}
+                  disabled={toggling || scheduleEnabled === null}
+                  title={scheduleEnabled ? 'Scheduled auto-assign is ON — click to disable' : 'Scheduled auto-assign is OFF — click to enable'}
+                  style={{
+                    position: 'relative',
+                    display: 'inline-block',
+                    width: 40,
+                    height: 22,
+                    borderRadius: 11,
+                    background: toggling || scheduleEnabled === null
+                      ? '#d1d5db'
+                      : scheduleEnabled ? '#16a34a' : '#9ca3af',
+                    border: 'none',
+                    cursor: (toggling || scheduleEnabled === null) ? 'not-allowed' : 'pointer',
+                    padding: 0,
+                    transition: 'background 0.2s',
+                    flexShrink: 0,
+                  }}
+                >
+                  <span style={{
+                    position: 'absolute',
+                    top: 3,
+                    left: (scheduleEnabled && !toggling) ? 21 : 3,
+                    width: 16,
+                    height: 16,
+                    borderRadius: '50%',
+                    background: '#fff',
+                    transition: 'left 0.18s',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}>
+                    {toggling ? <Spinner size={10} /> : null}
+                  </span>
+                </button>
+                <span style={{
+                  fontFamily: 'Nunito, sans-serif',
+                  fontSize: '0.75rem',
+                  fontWeight: 600,
+                  color: scheduleEnabled === null ? '#9ca3af' : scheduleEnabled ? '#16a34a' : '#6b7280',
+                  whiteSpace: 'nowrap',
+                }}>
+                  {scheduleEnabled === null ? 'Schedule…' : scheduleEnabled ? 'Schedule ON' : 'Schedule OFF'}
+                </span>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => void handleAutoAssign()}
+                disabled={autoAssigning}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 7,
+                  background: autoAssigning ? '#6b7280' : '#0a352d',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: 8,
+                  padding: '8px 18px',
+                  fontFamily: 'Nunito, sans-serif',
+                  fontSize: '0.82rem',
+                  fontWeight: 700,
+                  cursor: autoAssigning ? 'not-allowed' : 'pointer',
+                  whiteSpace: 'nowrap',
+                  flexShrink: 0,
+                }}
+              >
+                {autoAssigning ? <><Spinner size={13} /> Running…</> : '⚡ Auto Assign All'}
+              </button>
+            </div>
           </div>
 
           <div>

@@ -106,6 +106,24 @@ export function triggerAutoAssign(days = 30) {
   });
 }
 
+export interface AutoAssignSettings {
+  enabled: boolean;
+  last_run_at: string | null;
+  last_run_summary: unknown;
+  updated_at: string | null;
+}
+
+export function getAutoAssignSettings() {
+  return apiRequest<{ success: boolean; data: AutoAssignSettings }>('/supplierio/nlio/auto-assign/settings');
+}
+
+export function updateAutoAssignSettings(enabled: boolean) {
+  return apiRequest<{ success: boolean; data: AutoAssignSettings; note: string }>('/supplierio/nlio/auto-assign/settings', {
+    method: 'PUT',
+    body: JSON.stringify({ enabled }),
+  });
+}
+
 export function notifyMarshalsByDocument(
   documentNo: string,
   overrides?: { interment_date?: string; interment_time?: string; mass_time?: string },
