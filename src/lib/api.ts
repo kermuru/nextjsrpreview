@@ -65,6 +65,24 @@ export function isApiError(error: unknown): error is ApiError {
   return error instanceof ApiError;
 }
 
+/** Absolute URL for an API path (e.g. for direct file downloads / links). */
+export function apiUrl(path: string): string {
+  if (path.startsWith('http')) return path;
+  return `${API_BASE}${path.startsWith('/') ? path : `/${path}`}`;
+}
+
+/**
+ * Absolute URL for a `public`-disk storage path (e.g. an image's hd_path/ld_path).
+ * Built from the API origin — NOT the backend's APP_URL — so images load wherever
+ * the API is reachable, regardless of how APP_URL is configured.
+ */
+export function storageUrl(path: string): string {
+  if (!path) return '';
+  if (path.startsWith('http')) return path;
+  const origin = API_BASE.replace(/\/api\/?$/, '');
+  return `${origin}/storage/${path.replace(/^\/+/, '')}`;
+}
+
 export function formatDate(value?: string): string {
   if (!value) return '';
   const parsed = new Date(value);
