@@ -23,7 +23,12 @@ export async function loadImage(src: string): Promise<HTMLImageElement> {
   });
 }
 
-export async function resizeImageFile(file: File, maxDimension: number): Promise<File> {
+export async function resizeImageFile(
+  file: File,
+  maxDimension: number,
+  quality = 0.9,
+  outputType?: string
+): Promise<File> {
   const source = await readFileAsDataUrl(file);
   const image = await loadImage(source);
   const scale = Math.min(maxDimension / image.width, maxDimension / image.height, 1);
@@ -35,13 +40,33 @@ export async function resizeImageFile(file: File, maxDimension: number): Promise
   const ctx = canvas.getContext('2d');
   if (!ctx) throw new Error('Canvas unavailable.');
   ctx.drawImage(image, 0, 0, width, height);
+  const type = outputType || file.type || 'image/jpeg';
   const blob = await new Promise<Blob>((resolve, reject) => {
     canvas.toBlob((value) => {
       if (value) resolve(value);
       else reject(new Error('Unable to create image blob.'));
-    }, file.type || 'image/jpeg', 0.9);
+    }, type, quality);
   });
-  return new File([blob], file.name, { type: blob.type || file.type || 'image/jpeg' });
+  const finalType = blob.type || type;
+  const name = renameWithExtForType(file.name, finalType);
+  return new File([blob], name, { type: finalType });
+}
+
+/** Natural pixel dimensions of an image file. */
+export async function imageDimensions(file: File): Promise<{ width: number; height: number }> {
+  const src = await readFileAsDataUrl(file);
+  const img = await loadImage(src);
+  return { width: img.naturalWidth || img.width, height: img.naturalHeight || img.height };
+}
+
+/** Swap a filename's extension to match an image mime type (jpeg/png/webp/gif). */
+export function renameWithExtForType(name: string, mime: string): string {
+  const ext =
+    mime === 'image/png' ? 'png' :
+    mime === 'image/webp' ? 'webp' :
+    mime === 'image/gif' ? 'gif' : 'jpg';
+  const base = name.replace(/\.[^.]+$/, '') || 'image';
+  return `${base}.${ext}`;
 }
 
 export async function previewFromFile(file: File, maxDimension = 500): Promise<string> {

@@ -32,6 +32,16 @@ const adminMenuItems = [
     description: 'Manage Discord user mapping for suppliers/admin use.',
     href: '/supplierio/discord',
   },
+  {
+    title: 'Processing Monitor',
+    description: 'Processed budget requests (IPR-IRB / ARB-IPR / EXB-ADV), tagged Java vs our system.',
+    href: '/budget-monitor',
+  },
+  {
+    title: 'Asset Image Library',
+    description: 'Bulk-upload asset images. View in high/low def and download the high-def original.',
+    href: '/asset-images',
+  },
 ];
 
 export default function HomePage() {

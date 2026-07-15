@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { isApiError } from '@/lib/api';
+import { getUserName } from '@/lib/auth';
 import { getAssignableItems } from '@/services/supplier-item-assignments';
 import {
   createNlioAssignment,
@@ -48,7 +49,7 @@ export default function NlioSupplierAssignmentPage() {
   const [days, setDays] = useState<7 | 15 | 30>(7);
   const [listLoading, setListLoading] = useState(false);
   const [documentNo, setDocumentNo] = useState('');
-  const [assignedBy, setAssignedBy] = useState('');
+  const [assignedBy, setAssignedBy] = useState(() => getUserName());
   const [items, setItems] = useState<SupplierAssignableItem[]>([]);
   const [suppliers, setSuppliers] = useState<SupplierByItemRecord[]>([]);
   const [nlioRecords, setNlioRecords] = useState<NlioRecord[]>([]);
@@ -68,6 +69,12 @@ export default function NlioSupplierAssignmentPage() {
   const [message, setMessage] = useState('');
   const [budgetAmounts, setBudgetAmounts] = useState<BudgetAmountItem[]>([]);
   const [serviceAmount, setServiceAmount] = useState<string>('');
+
+  // "Assigned By" is always the logged-in user — auto-filled, not editable.
+  useEffect(() => {
+    const name = getUserName();
+    if (name) setAssignedBy(name);
+  }, []);
 
   useEffect(() => {
     async function loadInitial() {
@@ -690,13 +697,14 @@ export default function NlioSupplierAssignmentPage() {
               )}
             </div>
 
-            <div>
+            {/* "Assigned By" is auto-set to the logged-in user — hidden from the form. */}
+            <div style={{ display: 'none' }}>
               <label className="helper">Assigned By</label>
               <input
                 className="input"
                 value={assignedBy}
-                onChange={(event) => setAssignedBy(event.target.value)}
-                placeholder="Your name"
+                readOnly
+                aria-hidden
               />
             </div>
 
