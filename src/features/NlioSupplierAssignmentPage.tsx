@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { isApiError } from '@/lib/api';
-import { getUserName } from '@/lib/auth';
+import { getUser, getUserName, logout } from '@/lib/auth';
 import { getAssignableItems } from '@/services/supplier-item-assignments';
 import {
   createNlioAssignment,
@@ -69,11 +69,14 @@ export default function NlioSupplierAssignmentPage() {
   const [message, setMessage] = useState('');
   const [budgetAmounts, setBudgetAmounts] = useState<BudgetAmountItem[]>([]);
   const [serviceAmount, setServiceAmount] = useState<string>('');
+  const [isAdmin, setIsAdmin] = useState(false);
 
   // "Assigned By" is always the logged-in user — auto-filled, not editable.
   useEffect(() => {
     const name = getUserName();
     if (name) setAssignedBy(name);
+    const u = getUser();
+    setIsAdmin(typeof u?.username === 'string' && u.username === 'kfugata');
   }, []);
 
   useEffect(() => {
@@ -295,15 +298,24 @@ export default function NlioSupplierAssignmentPage() {
     <div className="page-shell plain">
       <div className="center-column">
         <div className="page-card wide stack">
-          <Link
-            href="/supplierio"
-            style={{ backgroundColor: '#8b6b44', color: 'white', padding: '8px 12px', borderRadius: 4, textDecoration: 'none' , width: 'fit-content'}}
-          >
-            Menu
-          </Link>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <Link
+              href="/supplierio"
+              style={{ backgroundColor: '#8b6b44', color: 'white', padding: '8px 12px', borderRadius: 4, textDecoration: 'none', width: 'fit-content' }}
+            >
+              Menu
+            </Link>
+            <button
+              type="button"
+              onClick={logout}
+              style={{ background: 'none', border: '1px solid #d1d5db', borderRadius: 4, padding: '6px 14px', fontSize: '0.8rem', color: '#6b7280', cursor: 'pointer' }}
+            >
+              Log out
+            </button>
+          </div>
           <div className="row between" style={{ alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
             <h1 style={{ margin: 0 }}>NLIO Supplier Assignment</h1>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
+            {isAdmin && <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
               {/* Schedule on/off toggle */}
               <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
                 <button
@@ -379,7 +391,7 @@ export default function NlioSupplierAssignmentPage() {
               >
                 {autoAssigning ? <><Spinner size={13} /> Running…</> : '⚡ Auto Assign All'}
               </button>
-            </div>
+            </div>}
           </div>
 
           <div>
