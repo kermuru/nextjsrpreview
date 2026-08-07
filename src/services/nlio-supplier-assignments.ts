@@ -22,7 +22,7 @@ export interface RecentNlioItem extends PendingNlioItem {
   item_status: NlioItemStatus[];
 }
 
-export function getRecentNlios(days: 7 | 15 | 30) {
+export function getRecentNlios(days: 7 | 15 | 30 | 90) {
   return apiRequest<RecentNlioItem[]>(`/supplierio/nlio/recent?days=${days}`);
 }
 

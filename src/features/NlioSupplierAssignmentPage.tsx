@@ -46,7 +46,7 @@ function Spinner({ size = 14 }: { size?: number }) {
 
 export default function NlioSupplierAssignmentPage() {
   const [recentNlios, setRecentNlios] = useState<RecentNlioItem[]>([]);
-  const [days, setDays] = useState<7 | 15 | 30>(7);
+  const [days, setDays] = useState<7 | 15 | 30 | 90>(7);
   const [listLoading, setListLoading] = useState(false);
   const [documentNo, setDocumentNo] = useState('');
   const [assignedBy, setAssignedBy] = useState(() => getUserName());
@@ -420,6 +420,7 @@ export default function NlioSupplierAssignmentPage() {
                   { d: 7,  label: '7 days'  },
                   { d: 15, label: '15 days' },
                   { d: 30, label: '30 days' },
+                  { d: 90, label: '90 days' },
                 ] as const).map(({ d, label }) => (
                   <button
                     key={d}
