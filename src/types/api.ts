@@ -29,11 +29,25 @@ export interface UploadInterredPhotoContext {
   occupant?: string;
   gender?: string;
   uploader_name?: string;
+  /** The supplier-facing photo. Once dressed, this is the Barong/Filipiniana version. */
   photo?: string;
   is_valid?: number;
   allow_facebook_post?: boolean;
   created_at?: string;
   updated_at?: string;
+
+  /* ── Barong editor ───────────────────────────────────────────────────────
+   * Present on every row because /lapidaDashboard returns whole models. A set
+   * `original_photo` means this row was dressed: the family's upload was moved
+   * aside and `photo` now holds the generated version. Note it is a stored PATH,
+   * not a URL — only `photo` is resolved server-side.
+   */
+  original_photo?: string | null;
+  barong_edit_id?: number | null;
+  gdrive_file_id?: string | null;
+  gdrive_link?: string | null;
+  /** Why the Drive archive failed. The edit itself still succeeded. */
+  barong_error?: string | null;
 }
 
 export interface PhotoLinkRecord {
