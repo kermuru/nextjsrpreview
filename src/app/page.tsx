@@ -38,9 +38,25 @@ const adminMenuItems = [
     href: '/budget-monitor',
   },
   {
+    title: 'LMC Payout History',
+    description: 'Interment service payouts (emcee, singer, lapida, etc.). Cancel a processed (PR) payout to free its budget.',
+    href: '/lmc-payout-history',
+  },
+  {
     title: 'Asset Image Library',
     description: 'Bulk-upload asset images. View in high/low def and download the high-def original.',
     href: '/asset-images',
+  },
+  {
+    title: 'Close IPR-BOQ Lines',
+    description:
+      'Retire requisition lines left by the old IPR post route, which never drew down the BOQ budget. Close them before anyone raises a PO against them.',
+    href: '/ipr-line-close',
+  },
+  {
+    title: 'Auto BOQ Custodian',
+    description: 'Choose the person Auto BOQ names as stage custodian on newly generated BOQs.',
+    href: '/autoboq-custodian',
   },
 ];
 
