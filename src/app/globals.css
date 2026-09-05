@@ -675,3 +675,421 @@ img {
   flex-direction: column;
   gap: 8px;
 }
+/* ─────────────────────────────────────────────────────────────────────────────
+   Interment Item & Cost  (.iic-*)
+
+   MOBILE FIRST: every base rule below describes the phone. Larger screens are
+   added back with min-width queries only where the extra room genuinely helps.
+   The desktop result matches the previous fixed two-column layout.
+
+   Two things here are mobile correctness rather than taste:
+     - inputs are 16px until the tablet breakpoint. Any smaller and iOS Safari
+       zooms the whole page the moment a field takes focus, leaving the form
+       scrolled sideways with no way back except a pinch.
+     - the items table becomes a stack of cards. Eight columns cannot be read on
+       a phone by scrolling sideways, least of all the two checkbox columns,
+       which are the only interactive part of it.
+   ──────────────────────────────────────────────────────────────────────────── */
+
+.iic-page {
+  min-height: 100vh;
+  background: #f5f5f4;
+  padding: 16px 12px;
+  font-family: system-ui, sans-serif;
+}
+
+.iic-shell {
+  max-width: 1080px;
+  margin: 0 auto;
+}
+
+.iic-head {
+  margin-bottom: 16px;
+}
+
+.iic-head h1 {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: #0a352d;
+  margin: 0;
+}
+
+.iic-head p {
+  color: #78716c;
+  font-size: 0.82rem;
+  margin: 4px 0 0;
+  line-height: 1.45;
+}
+
+/* Single column on a phone; the form sits above the list it adds to. */
+.iic-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+  align-items: start;
+}
+
+.iic-card {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  min-width: 0;
+}
+
+.iic-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.iic-card h2 {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #0a352d;
+  margin: 0;
+}
+
+.iic-form h2 {
+  border-bottom: 1px solid #eee;
+  padding-bottom: 10px;
+}
+
+.iic-note {
+  font-size: 0.72rem;
+  color: #78716c;
+  background: #f5f5f4;
+  border: 1px solid #e7e5e4;
+  border-radius: 7px;
+  padding: 8px 10px;
+  line-height: 1.45;
+}
+
+/* Paired fields stack until there is room to sit them side by side. */
+.iic-row {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+}
+
+.iic-label {
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #57534e;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 5px;
+}
+
+.iic-req {
+  color: #dc2626;
+}
+
+.iic-input {
+  width: 100%;
+  padding: 11px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 7px;
+  font-size: 16px;
+  font-family: inherit;
+  outline: none;
+  box-sizing: border-box;
+  background: #fff;
+  color: #292524;
+}
+
+.iic-input:focus {
+  border-color: #0a352d;
+  box-shadow: 0 0 0 3px rgba(10, 53, 45, 0.1);
+}
+
+.iic-hint {
+  font-size: 0.68rem;
+  color: #a8a29e;
+  margin-top: 3px;
+}
+
+.iic-check {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.85rem;
+  color: #44403c;
+  cursor: pointer;
+  min-height: 44px;
+}
+
+.iic-check input[type="checkbox"],
+.iic-table input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  accent-color: #0a352d;
+  cursor: pointer;
+  flex: none;
+}
+
+.iic-alert {
+  border-radius: 7px;
+  padding: 10px 12px;
+  font-size: 0.8rem;
+  line-height: 1.45;
+}
+
+.iic-alert--error {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #991b1b;
+}
+
+.iic-alert--ok {
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  color: #166534;
+}
+
+.iic-submit {
+  padding: 14px;
+  border-radius: 8px;
+  border: none;
+  background: #0a352d;
+  color: #fff;
+  font-weight: 800;
+  font-size: 0.95rem;
+  font-family: inherit;
+  cursor: pointer;
+  min-height: 48px;
+}
+
+.iic-submit:disabled {
+  background: #9ca3af;
+  cursor: not-allowed;
+}
+
+.iic-listhead {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.iic-refresh {
+  font-size: 0.78rem;
+  color: #0a352d;
+  background: none;
+  border: 1px solid #d6d3d1;
+  border-radius: 6px;
+  padding: 9px 14px;
+  cursor: pointer;
+  font-family: inherit;
+  min-height: 40px;
+  flex: none;
+}
+
+.iic-scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* ── The items list, as cards (phone default) ───────────────────────────────── */
+
+.iic-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+.iic-table thead {
+  display: none;
+}
+
+.iic-table tbody,
+.iic-table tr,
+.iic-table td {
+  display: block;
+  width: 100%;
+}
+
+.iic-table tr {
+  border: 1px solid #e7e5e4;
+  border-radius: 10px;
+  padding: 10px 12px;
+  margin-bottom: 10px;
+  background: #fff;
+}
+
+.iic-table td {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 7px 0;
+  text-align: right;
+  border-bottom: 1px solid #f5f5f4;
+}
+
+.iic-table tr td:last-child {
+  border-bottom: none;
+}
+
+.iic-table td::before {
+  content: attr(data-label);
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #78716c;
+  text-align: left;
+  flex: none;
+}
+
+/* The description leads the card, so give it the whole width. */
+.iic-table td.iic-cell-desc {
+  display: block;
+  text-align: left;
+  font-weight: 700;
+  color: #292524;
+  font-size: 0.95rem;
+  padding-top: 0;
+}
+
+.iic-table td.iic-cell-desc::before {
+  display: block;
+  margin-bottom: 2px;
+}
+
+.iic-table td.iic-empty {
+  display: block;
+  text-align: center;
+  color: #a8a29e;
+  padding: 18px 0;
+  border-bottom: none;
+}
+
+.iic-table td.iic-empty::before {
+  content: none;
+}
+
+.iic-price {
+  font-weight: 700;
+}
+
+.iic-code {
+  color: #78716c;
+}
+
+/* ── >=480px: pair the short form fields ────────────────────────────────────── */
+@media (min-width: 480px) {
+  .iic-row {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+/* ── >=640px: a little more breathing room ──────────────────────────────────── */
+@media (min-width: 640px) {
+  .iic-page {
+    padding: 24px 16px;
+  }
+
+  .iic-card {
+    padding: 20px;
+  }
+
+  .iic-head h1 {
+    font-size: 1.5rem;
+  }
+
+  .iic-head p {
+    font-size: 0.85rem;
+  }
+}
+
+/* ── >=768px: the real table returns ────────────────────────────────────────── */
+@media (min-width: 768px) {
+  .iic-input {
+    font-size: 0.85rem;
+    padding: 9px 12px;
+  }
+
+  .iic-submit {
+    padding: 11px;
+    font-size: 0.9rem;
+  }
+
+  .iic-table {
+    font-size: 0.8rem;
+  }
+
+  .iic-table thead {
+    display: table-header-group;
+  }
+
+  .iic-table tbody {
+    display: table-row-group;
+  }
+
+  .iic-table tr {
+    display: table-row;
+    border: none;
+    border-bottom: 1px solid #f3f4f6;
+    border-radius: 0;
+    padding: 0;
+    margin: 0;
+    background: none;
+  }
+
+  .iic-table thead tr {
+    text-align: left;
+    color: #78716c;
+    border-bottom: 2px solid #eee;
+  }
+
+  .iic-table th {
+    padding: 8px 6px;
+    white-space: nowrap;
+  }
+
+  .iic-table td,
+  .iic-table td.iic-cell-desc {
+    display: table-cell;
+    text-align: left;
+    padding: 8px 6px;
+    border-bottom: none;
+    font-size: inherit;
+  }
+
+  .iic-table td::before,
+  .iic-table td.iic-cell-desc::before {
+    content: none;
+  }
+
+  .iic-table td.iic-cell-desc {
+    font-weight: 600;
+  }
+
+  .iic-table td.iic-num,
+  .iic-table th.iic-num {
+    text-align: right;
+  }
+
+  .iic-table td.iic-mid,
+  .iic-table th.iic-mid {
+    text-align: center;
+  }
+
+  .iic-table td.iic-empty {
+    display: table-cell;
+    text-align: left;
+    padding: 16px;
+  }
+}
+
+/* ── >=1000px: form beside the list, as before ──────────────────────────────── */
+@media (min-width: 1000px) {
+  .iic-grid {
+    grid-template-columns: minmax(0, 420px) 1fr;
+    gap: 24px;
+  }
+}
