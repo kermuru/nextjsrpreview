@@ -1093,3 +1093,161 @@ img {
     gap: 24px;
   }
 }
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   Admin Portal menu  (.menu-*)
+
+   The cards are the whole point of this page, so they have to read as pressable
+   at a glance: a raised resting state, a clear lift + accent border under the
+   cursor, and a real pressed state on click. Keyboard users get the same accent
+   through :focus-visible, so tabbing tells the same story as hovering.
+   ──────────────────────────────────────────────────────────────────────────── */
+
+.menu-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 18px 18px 14px;
+  border-radius: 14px;
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
+  background: #fff;
+  border: 1px solid var(--border);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04), 0 8px 20px rgba(0, 0, 0, 0.05);
+  transition: transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease;
+}
+
+/* The accent rail: invisible until the card is hovered, focused or pinned. */
+.menu-card::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 14px;
+  bottom: 14px;
+  width: 3px;
+  border-radius: 0 3px 3px 0;
+  background: var(--primary);
+  opacity: 0;
+  transition: opacity 0.16s ease;
+}
+
+.menu-card:hover,
+.menu-card:focus-visible {
+  transform: translateY(-3px);
+  border-color: var(--primary);
+  box-shadow: 0 10px 28px rgba(139, 107, 68, 0.18);
+  outline: none;
+}
+
+.menu-card:hover::before,
+.menu-card:focus-visible::before {
+  opacity: 1;
+}
+
+/* Pressed — the card sits back down, so a click feels like a button. */
+.menu-card:active {
+  transform: translateY(0);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+}
+
+/* Keyboard highlight from the search box (arrow keys), not the mouse. */
+.menu-card.is-cursor {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(139, 107, 68, 0.18), 0 10px 28px rgba(139, 107, 68, 0.15);
+}
+
+.menu-card.is-cursor::before {
+  opacity: 1;
+}
+
+.menu-card-title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.35;
+  padding-right: 26px;
+}
+
+.menu-card-desc {
+  margin: 6px 0 0;
+  font-size: 12.5px;
+  line-height: 1.55;
+  color: var(--muted);
+}
+
+.menu-card-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  border-top: 1px solid var(--border);
+  padding-top: 10px;
+}
+
+.menu-card-cat {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+/* "Open" is muted until the card is engaged, then it lights up and nudges. */
+.menu-card-open {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--muted);
+  transition: color 0.16s ease, transform 0.16s ease;
+}
+
+.menu-card:hover .menu-card-open,
+.menu-card:focus-visible .menu-card-open,
+.menu-card.is-cursor .menu-card-open {
+  color: var(--primary);
+  transform: translateX(3px);
+}
+
+/* Pin star sits above the card so it never triggers the link. */
+.menu-pin {
+  position: absolute;
+  top: 10px;
+  right: 8px;
+  z-index: 2;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: 16px;
+  line-height: 1;
+  padding: 4px 6px;
+  border-radius: 6px;
+  color: rgba(34, 34, 34, 0.25);
+  transition: color 0.16s ease, background 0.16s ease;
+}
+
+.menu-pin:hover {
+  background: rgba(139, 107, 68, 0.1);
+  color: var(--primary);
+}
+
+.menu-pin.is-pinned {
+  color: var(--primary);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .menu-card,
+  .menu-card-open,
+  .menu-card::before {
+    transition: none;
+  }
+
+  .menu-card:hover,
+  .menu-card:focus-visible {
+    transform: none;
+  }
+}

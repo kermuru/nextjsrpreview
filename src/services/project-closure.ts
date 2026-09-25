@@ -172,11 +172,55 @@ export const getPendingChecker = () =>
 export const getClosureReport = (closureId: number) =>
   apiRequest<ClosureReport>(`${base}/closure-report/${closureId}`);
 
+/**
+ * Per-project consumption report (BOM / LMC / salary — budget vs consumed vs variance).
+ * Same report shape as closure-report but keyed by project id, so it works for ANY
+ * project (e.g. commenced ones) without needing a drafted closure.
+ */
+export interface ProjectConsumptionReport {
+  document_no?: string;
+  project: Record<string, unknown> | null;
+  scope_percentage?: number;
+  material_consumption: { budget: number; actual: number; variance: number } | null;
+  lmc_consumption: { budget: number; actual: number; variance: number } | null;
+  unconsumed_bom: Array<{ sku_description?: string; description?: string; sku_code?: string; qty_totalbom: number; qty_totalconsumed: number; qty_remaining: number; amt_totalbom?: number; amt_totalconsumed?: number }>;
+  unconsumed_lmc: Array<{ description: string; unit?: string; item_name?: string; lmc_type?: string; budget: number; paid: number; remaining: number }>;
+  unconsumed_acct_pair: Array<{ acct_no: string; acct_title: string; budget: number; paid: number; remaining: number }>;
+}
+
+export const getClosureReportByProject = (projectId: number) =>
+  apiRequest<ProjectConsumptionReport>(`/project-closure/report-by-project/${projectId}`);
+
 export const processClosureDR = (closureId: number) =>
   apiRequest<{ documentno_pr: string; docstatus: string; amt_closure: number; processed_at: string }>(
     `/project-closure/${closureId}/process`,
     { method: 'POST' }
   );
+
+export interface ReturnClosureResult {
+  project_id: number;
+  reverted_to: string;
+  closure_count: number;
+  closures: Array<{
+    closure_id: number;
+    documentno: string;
+    ad_org_id: number;
+    reversing_acct_doc_id: number;
+    gl_rows_reversed: number;
+  }>;
+}
+
+/**
+ * Dry-run project-wide RETURN — reverses every processed closure of the project across all BUs.
+ * Sends an idempotency key so a retried tap replays the same result instead of re-reversing.
+ */
+export const returnClosureByProject = (projectId: number, idempotencyKey?: string) =>
+  apiRequest<ReturnClosureResult>(`/project-closure/return-by-project/${projectId}`, {
+    method: 'POST',
+    body: JSON.stringify({
+      idempotency_key: idempotencyKey ?? `return-${projectId}-${Date.now()}`,
+    }),
+  });
 
 export const triggerAutoClose = (dateClosure: string, options?: { projectId?: number; batch?: number }) =>
   apiRequest<TriggerResult>(`${base}/trigger`, {
